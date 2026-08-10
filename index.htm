@@ -188,7 +188,7 @@
       </div>
     </div>
     <div class="card">
-      <h3>Guitar streak</h3>
+      <h3>ProductivePractice streak</h3>
       <div class="streak-num" id="streakNum">0</div>
       <div class="streak-label">consecutive days practiced</div>
       <button class="pill-btn" id="practiceBtn" style="margin-top:14px; width:100%;">Mark today practiced</button>
@@ -198,6 +198,8 @@
       <div id="gapsList"><p class="gap-item">No gaps found yet.</p></div>
     </div>
   </div>
+
+  <p style="text-align:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:56px; letter-spacing:.03em;">Made by Yagnik N. ❤️</p>
 
 </div>
 
@@ -209,7 +211,7 @@
   <div class="field"><label>Title</label><input id="fTitle" placeholder="e.g. IT305 — Computer Networks"></div>
   <div class="row2">
     <div class="field"><label>Type</label>
-      <select id="fType"><option value="class">Class</option><option value="lab">Lab</option><option value="guitar">Guitar</option><option value="other">Other</option></select>
+      <select id="fType"><option value="class">Class</option><option value="lab">Lab</option><option value="guitar">ProductivePractice</option><option value="other">Other</option></select>
     </div>
     <div class="field"><label>Day</label>
       <select id="fDay"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select>
@@ -349,7 +351,7 @@ async function markPracticedToday(){
 function toMinutes(t){ const [h,m] = t.split(':').map(Number); return h*60+m; }
 function fmtTime(t){ const [h,m] = t.split(':').map(Number); return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'); }
 function dotClass(type){ return {class:'dot-class',lab:'dot-lab',guitar:'dot-guitar',other:'dot-other'}[type]||'dot-other'; }
-function typeLabel(type){ return {class:'Class',lab:'Lab',guitar:'Guitar',other:'Other'}[type]||'Other'; }
+function typeLabel(type){ return {class:'Class',lab:'Lab',guitar:'ProductivePractice',other:'Other'}[type]||'Other'; }
 function todayString(){ return new Date().toISOString().slice(0,10); }
 
 // ---------- render ----------
@@ -489,13 +491,13 @@ function openEditDrawer(entry){
 document.getElementById('fabBtn').onclick = openNewDrawer;
 overlay.onclick = closeDrawer;
 
-const QUICK = ['IT305 — Computer Networks','IE410 — Robotics','IT214 — DBMS','CT216 — Communication Systems','EL203 — Digital Logic','Radio Club','Guitar Practice'];
+const QUICK = ['IT305 — Computer Networks','IE410 — Robotics','IT214 — DBMS','CT216 — Communication Systems','EL203 — Digital Logic','X Club','ProductivePractice'];
 const chipsEl = document.getElementById('quickChips');
 QUICK.forEach(name=>{
   const c = document.createElement('button'); c.className='chip'; c.textContent=name;
   c.onclick = ()=>{
     document.getElementById('fTitle').value = name;
-    document.getElementById('fType').value = name==='Guitar Practice' ? 'guitar' : (name==='Radio Club' ? 'other' : 'class');
+    document.getElementById('fType').value = name==='ProductivePractice' ? 'guitar' : (name==='X Club' ? 'other' : 'class');
   };
   chipsEl.appendChild(c);
 });
