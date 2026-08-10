@@ -175,7 +175,7 @@
   <p class="section-title" id="agendaTitle">Agenda</p>
   <div class="agenda" id="agendaList"></div>
 
-  <p class="section-title">Week at a glance</p>
+  <p class="section-title" style="margin-top:52px; padding-top:32px; border-top:1px solid var(--line);">Week at a glance</p>
   <div class="week-grid" id="weekGrid"></div>
 
   <div class="cards">
@@ -244,16 +244,17 @@ let currentUser = null;
 
 // ---------- auth ----------
 let authMode = 'signin';
-document.getElementById('authToggleLink').onclick = ()=>{
+function toggleAuthMode(){
   authMode = authMode==='signin' ? 'signup' : 'signin';
   document.getElementById('authTitle').textContent = authMode==='signin' ? 'Sign in' : 'Create an account';
   document.getElementById('authSubmit').textContent = authMode==='signin' ? 'Sign in' : 'Create account';
   document.getElementById('authToggle').innerHTML = authMode==='signin'
     ? 'New here? <a id="authToggleLink">Create an account</a>'
     : 'Already have an account? <a id="authToggleLink">Sign in</a>';
-  document.getElementById('authToggleLink').onclick = arguments.callee;
+  document.getElementById('authToggleLink').onclick = toggleAuthMode;
   document.getElementById('authError').textContent = '';
-};
+}
+document.getElementById('authToggleLink').onclick = toggleAuthMode;
 
 document.getElementById('authSubmit').onclick = async ()=>{
   const email = document.getElementById('authEmail').value.trim();
