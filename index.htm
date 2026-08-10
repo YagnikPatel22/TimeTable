@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ephemeral — Timetable</title>
+<title>Ephemeral — TimeTable</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -20,6 +20,10 @@
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
+  button, select{
+    font-family:inherit; color:inherit; background:none; border:none;
+    -webkit-appearance:none; appearance:none;
+  }
   body{
     background:var(--bg); color:var(--fg); font-family:'Jost', sans-serif; font-weight:400;
     -webkit-font-smoothing:antialiased; transition:background .4s ease, color .4s ease; min-height:100vh;
@@ -206,7 +210,10 @@
 <button class="fab hidden" id="fabBtn">+</button>
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <div class="drawer" id="drawer">
-  <p class="section-title" id="drawerTitle">New entry</p>
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+    <p class="section-title" id="drawerTitle" style="margin:0;">New entry</p>
+    <button class="icon-btn" id="drawerCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+  </div>
   <div class="chips" id="quickChips"></div>
   <div class="field"><label>Title</label><input id="fTitle" placeholder="e.g. IT305 — Computer Networks"></div>
   <div class="row2">
@@ -489,6 +496,7 @@ function openEditDrawer(entry){
   document.getElementById('fNotify').value = entry.notify; openDrawer();
 }
 document.getElementById('fabBtn').onclick = openNewDrawer;
+document.getElementById('drawerCloseBtn').onclick = closeDrawer;
 overlay.onclick = closeDrawer;
 
 const QUICK = ['IT305 — Computer Networks','IE410 — Robotics','IT214 — DBMS','CT216 — Communication Systems','EL203 — Digital Logic','X Club','ProductivePractice'];
