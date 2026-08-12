@@ -98,11 +98,14 @@
   .streak-label{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:.05em; margin-top:4px;}
   .streak-dots{display:flex; gap:9px; margin-top:16px;}
   .streak-dot-wrap{display:flex; flex-direction:column; align-items:center; gap:6px;}
-  .streak-dot{width:13px; height:13px; border-radius:50%; border:1.5px solid var(--line); transition:all .3s ease;}
+  .streak-dot{width:13px; height:13px; border-radius:50%; border:1.5px solid var(--line); transition:all .2s ease; cursor:pointer;}
   .streak-dot.filled{background:var(--teal); border-color:var(--teal); box-shadow:0 0 0 3px rgba(75,122,116,0.15);}
+  .streak-dot.today{border-color:var(--brass);}
+  .streak-dot.filled.today{box-shadow:0 0 0 3px rgba(184,137,79,0.22);}
+  .streak-dot.future{cursor:default; opacity:.35;}
+  .streak-dot:not(.future):hover{transform:scale(1.15); border-color:var(--brass);}
   .streak-dot-day{font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--muted); letter-spacing:.03em;}
-  .streak-undo{display:block; text-align:center; font-family:'Jost'; font-size:11px; color:var(--muted); margin-top:8px; cursor:pointer; text-decoration:underline; text-underline-offset:2px;}
-  .streak-undo:hover{color:var(--rust);}
+  .streak-caption{font-family:'Jost'; font-size:10.5px; color:var(--muted); margin-top:10px; text-align:center;}
   .gap-item{font-family:'JetBrains Mono',monospace; font-size:12.5px; padding:6px 0; border-bottom:1px solid var(--line);}
   .gap-item:last-child{border-bottom:none;}
 
@@ -203,8 +206,8 @@
       <div class="streak-num" id="streakNum">0</div>
       <div class="streak-label">consecutive days practiced</div>
       <div class="streak-dots" id="streakDots"></div>
+      <p class="streak-caption">tap a day to toggle it</p>
       <button class="pill-btn" id="practiceBtn" style="margin-top:14px; width:100%;">Mark today practiced</button>
-      <span class="streak-undo hidden" id="streakUndo">tap to undo today's mark</span>
     </div>
     <div class="card">
       <h3>Open blocks today</h3>
@@ -354,21 +357,20 @@ async function deleteEntry(id){
   entries = entries.filter(e=>e.id!==id);
   render();
 }
-async function markPracticedToday(){
-  const t = todayString();
-  const { error } = await sb.from('guitar_log').upsert({ user_id: currentUser.id, practiced_on: t }, { onConflict: 'user_id,practiced_on' });
-  if(error){ showToast('Could not save: '+error.message); return; }
-  if(!guitarDates.includes(t)) guitarDates.push(t);
+async function togglePracticedDate(dateKey){
+  const isMarked = guitarDates.includes(dateKey);
+  if(isMarked){
+    const { error } = await sb.from('guitar_log').delete().eq('user_id', currentUser.id).eq('practiced_on', dateKey);
+    if(error){ showToast('Could not undo: '+error.message); return; }
+    guitarDates = guitarDates.filter(d=>d!==dateKey);
+    showToast(dateKey===todayString() ? 'Undone.' : 'Removed '+dateKey+'.');
+  } else {
+    const { error } = await sb.from('guitar_log').upsert({ user_id: currentUser.id, practiced_on: dateKey }, { onConflict: 'user_id,practiced_on' });
+    if(error){ showToast('Could not save: '+error.message); return; }
+    guitarDates.push(dateKey);
+    showToast(dateKey===todayString() ? "Nice — logged today's practice." : 'Marked '+dateKey+'.');
+  }
   renderStreak();
-  showToast("Nice — logged today's practice.");
-}
-async function unmarkPracticedToday(){
-  const t = todayString();
-  const { error } = await sb.from('guitar_log').delete().eq('user_id', currentUser.id).eq('practiced_on', t);
-  if(error){ showToast('Could not undo: '+error.message); return; }
-  guitarDates = guitarDates.filter(d=>d!==t);
-  renderStreak();
-  showToast('Undone.');
 }
 
 // ---------- helpers ----------
@@ -479,25 +481,34 @@ function renderStreak(){
   if(!log.has(todayString())) d.setDate(d.getDate()-1);
   while(log.has(d.toISOString().slice(0,10))){ streak++; d.setDate(d.getDate()-1); }
   document.getElementById('streakNum').textContent = streak;
-  const isDoneToday = log.has(todayString());
+  const todayKey = todayString();
+  const isDoneToday = log.has(todayKey);
   const btn = document.getElementById('practiceBtn');
   btn.textContent = isDoneToday ? 'Practiced today ✓' : 'Mark today practiced';
   btn.classList.toggle('on', isDoneToday);
   btn.disabled = isDoneToday;
   btn.style.opacity = isDoneToday ? '0.75' : '1';
   btn.style.cursor = isDoneToday ? 'default' : 'pointer';
-  document.getElementById('streakUndo').classList.toggle('hidden', !isDoneToday);
 
-  // last 7 days as a dot row, oldest to newest, today last
+  // Monday-start calendar week, matching the rest of the app
+  const now = new Date();
+  const mondayOffset = (now.getDay()+6)%7;
+  const monday = new Date(now); monday.setDate(now.getDate()-mondayOffset);
   const dotsEl = document.getElementById('streakDots');
   dotsEl.innerHTML = '';
-  for(let i=6;i>=0;i--){
-    const dd = new Date(); dd.setDate(dd.getDate()-i);
+  for(let i=0;i<7;i++){
+    const dd = new Date(monday); dd.setDate(monday.getDate()+i);
     const key = dd.toISOString().slice(0,10);
+    const isFuture = key > todayKey;
+    const isToday = key === todayKey;
     const wrap = document.createElement('div'); wrap.className = 'streak-dot-wrap';
-    wrap.innerHTML = `<div class="streak-dot${log.has(key)?' filled':''}"></div><div class="streak-dot-day">${DAY_SHORT[dd.getDay()][0]}</div>`;
+    wrap.innerHTML = `<div class="streak-dot${log.has(key)?' filled':''}${isToday?' today':''}${isFuture?' future':''}" data-key="${key}" data-future="${isFuture}"></div><div class="streak-dot-day">${DAY_SHORT[dd.getDay()][0]}</div>`;
     dotsEl.appendChild(wrap);
   }
+  dotsEl.querySelectorAll('.streak-dot').forEach(dot=>{
+    if(dot.dataset.future==='true') return;
+    dot.onclick = ()=>togglePracticedDate(dot.dataset.key);
+  });
 }
 function render(){ renderDayTabs(); renderAgenda(); renderHero(); renderGaps(); renderStreak(); renderWeekGrid(); }
 
@@ -561,8 +572,7 @@ document.getElementById('saveEntry').onclick = async ()=>{
   showToast(editingId ? 'Updated: '+title : 'Saved: '+title);
 };
 
-document.getElementById('practiceBtn').onclick = markPracticedToday;
-document.getElementById('streakUndo').onclick = unmarkPracticedToday;
+document.getElementById('practiceBtn').onclick = ()=>togglePracticedDate(todayString());
 
 // ---------- pomodoro ----------
 let pomoSeconds = 25*60, pomoRunning = false, pomoInterval = null, pomoIsBreak=false;
