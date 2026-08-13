@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ephemeral — Timetable</title>
+<title>Ephemeral — TimeTable</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -144,9 +144,258 @@
     .toast{left:16px; right:16px; max-width:none;} .icon-btn{width:34px; height:34px;}
   }
   @media(min-width:1200px){.wrap{max-width:1120px;}}
+
+  /* MAINTENANCE SCREEN */
+  .maint-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .maint-card{width:100%; max-width:460px; text-align:center;}
+  .maint-eyebrow{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); margin-bottom:18px;}
+  .maint-title{font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:500; font-size:clamp(38px,7vw,58px); line-height:1.05; margin:0 0 18px;}
+  .maint-msg{font-family:'Jost'; font-size:14.5px; color:var(--muted); line-height:1.6; margin:0 0 30px;}
+  .maint-line{position:relative; height:1px; background:var(--line); overflow:hidden; margin-bottom:30px;}
+  .maint-line::after{
+    content:''; position:absolute; top:0; left:-30%; width:30%; height:100%; background:var(--brass);
+    animation:maintShimmer 2.6s ease-in-out infinite;
+  }
+  @keyframes maintShimmer{
+    0%{left:-30%;} 50%{left:100%;} 100%{left:100%;}
+  }
+  .maint-foot{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--muted); letter-spacing:.05em;}
+
+  .view-tabs{display:flex; gap:8px; margin-bottom:30px;}
+
+  /* ===================== TODOS (scoped, reskinned to Ephemeral palette) ===================== */
+  .todo-scope{
+    --tbg:var(--bg); --tbg2:var(--paper-dim); --tbg3:var(--paper-dim); --tbg4:var(--paper-dim);
+    --ts1:color-mix(in srgb, var(--fg) 5%, transparent);
+    --ts2:color-mix(in srgb, var(--fg) 9%, transparent);
+    --ts3:color-mix(in srgb, var(--fg) 13%, transparent);
+    --tb1:var(--line);
+    --tb2:color-mix(in srgb, var(--fg) 18%, transparent);
+    --tt1:var(--fg);
+    --tt2:color-mix(in srgb, var(--fg) 74%, transparent);
+    --tt3:var(--muted);
+    --tt4:color-mix(in srgb, var(--fg) 22%, transparent);
+    --tt5:color-mix(in srgb, var(--fg) 10%, transparent);
+    --tdiv:var(--line);
+    --tmodal-bg:var(--paper-dim); --tmodal-border:var(--line);
+    --tmodal-opt:color-mix(in srgb, var(--fg) 5%, transparent);
+    --tmodal-opt-hover:color-mix(in srgb, var(--fg) 9%, transparent);
+    --tinp-bg:var(--paper-dim); --tchk-border:var(--line);
+    --tsheet-bg:var(--paper-dim);
+    --tbottom-bar:color-mix(in srgb, var(--bg) 88%, transparent);
+    --tblue:var(--brass); --tgreen:var(--teal); --tred:var(--rust); --torange:var(--brass);
+    font-family:'Jost',sans-serif; color:var(--tt1);
+    display:block;
+  }
+  .todo-scope *,.todo-scope *::before,.todo-scope *::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  .todo-scope button,.todo-scope select,.todo-scope input{font-family:'Jost',sans-serif;}
+
+  .todo-scope .todo-wrap{max-width:680px;margin:0 auto;padding:0;}
+  .todo-scope header{padding:0 0 22px;}
+  .todo-scope .hdr-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;}
+  .todo-scope .brand{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--tt4);margin-bottom:9px;}
+  .todo-scope .page-title{font-family:'Cormorant Garamond',serif;font-size:clamp(30px,5.5vw,46px);line-height:1.1;}
+  .todo-scope .title-line1{font-weight:600;font-style:italic;letter-spacing:-.01em;color:var(--tt1);}
+  .todo-scope .title-line2{font-weight:500;font-style:italic;letter-spacing:.01em;color:var(--tt3);margin-left:6px;}
+  .todo-scope .hdr-right{text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:5px;padding-top:2px;}
+  .todo-scope .hdr-date{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--tt4);}
+  .todo-scope .hdr-time{font-family:'JetBrains Mono',monospace;font-size:clamp(18px,4vw,24px);font-weight:400;letter-spacing:-.02em;color:var(--tt3);line-height:1;}
+
+  .todo-scope .stats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+  .todo-scope .stat{padding:5px 13px;border-radius:100px;font-size:11.5px;font-weight:600;font-family:'JetBrains Mono',monospace;}
+  .todo-scope .sp{background:color-mix(in srgb, var(--brass) 16%, transparent);color:var(--brass);}
+  .todo-scope .sd{background:color-mix(in srgb, var(--teal) 16%, transparent);color:var(--teal);}
+  .todo-scope .so{background:color-mix(in srgb, var(--rust) 16%, transparent);color:var(--rust);}
+  .todo-scope .st{background:var(--ts1);color:var(--tt3);}
+
+  .todo-scope .prog-wrap{margin-bottom:26px;}
+  .todo-scope .prog-lbl{display:flex;justify-content:space-between;margin-bottom:8px;}
+  .todo-scope .prog-lbl span{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--tt4);}
+  .todo-scope .prog-bar{height:2.5px;background:var(--ts2);border-radius:100px;overflow:hidden;}
+  .todo-scope .prog-fill{height:100%;background:linear-gradient(90deg,var(--brass),var(--teal));border-radius:100px;transition:width .55s cubic-bezier(.25,.46,.45,.94);}
+
+  .todo-scope .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;align-items:center;}
+  @media(max-width:599px){.todo-scope .controls{display:none;}}
+  .todo-scope .mob-actions{display:none;gap:8px;margin-bottom:16px;}
+  @media(max-width:599px){.todo-scope .mob-actions{display:flex;}}
+  .todo-scope .mob-search-wrap{flex:1;position:relative;}
+  .todo-scope .mob-search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.35;pointer-events:none;}
+  .todo-scope .mob-search-icon path,.todo-scope .mob-search-icon circle,.todo-scope .search-icon path,.todo-scope .search-icon circle{stroke:var(--tt1);}
+  .todo-scope .mob-search-inp{width:100%;background:var(--ts1);border:1px solid var(--tb1);border-radius:12px;padding:10px 12px 10px 33px;font-size:14px;font-weight:500;color:var(--tt1);outline:none;transition:all .22s;height:44px;}
+  .todo-scope .mob-search-inp::placeholder{color:var(--tt4);}
+  .todo-scope .mob-search-inp:focus{background:var(--ts2);border-color:color-mix(in srgb, var(--brass) 50%, transparent);}
+  .todo-scope .mob-filter-btn{background:var(--ts1);border:1px solid var(--tb1);border-radius:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--tt3);transition:all .2s;flex-shrink:0;}
+  .todo-scope .mob-filter-btn:hover,.todo-scope .mob-filter-btn:active{background:var(--ts2);color:var(--tt2);}
+
+  .todo-scope .search-wrap{flex:1;min-width:150px;position:relative;}
+  .todo-scope .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.35;pointer-events:none;}
+  .todo-scope .search-inp{width:100%;background:var(--ts1);border:1px solid var(--tb1);border-radius:12px;padding:9px 12px 9px 35px;font-size:13px;font-weight:500;color:var(--tt1);outline:none;transition:all .22s;}
+  .todo-scope .search-inp::placeholder{color:var(--tt4);}
+  .todo-scope .search-inp:focus{background:var(--ts2);border-color:color-mix(in srgb, var(--brass) 50%, transparent);}
+  .todo-scope .sel-wrap{position:relative;}
+  .todo-scope .ctrl-sel{background:var(--ts1);border:1px solid var(--tb1);border-radius:12px;padding:9px 26px 9px 12px;font-size:12.5px;font-weight:600;color:var(--tt2);outline:none;appearance:none;transition:all .2s;}
+  .todo-scope .sel-arr{position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.4;}
+  .todo-scope .sel-arr path{stroke:var(--tt1);}
+  .todo-scope .ctrl-btn{background:var(--ts1);border:1px solid var(--tb1);border-radius:12px;padding:9px 14px;font-size:12px;font-weight:600;color:var(--tt3);transition:all .2s;white-space:nowrap;}
+  .todo-scope .ctrl-btn:hover{background:color-mix(in srgb, var(--rust) 10%, transparent);color:var(--rust);border-color:color-mix(in srgb, var(--rust) 20%, transparent);}
+  .todo-scope .wa-btn{background:var(--ts1);border:1px solid var(--tb1);border-radius:12px;padding:9px 14px;font-size:12px;font-weight:600;color:var(--tt3);transition:all .2s;white-space:nowrap;}
+  .todo-scope .wa-btn:hover{background:color-mix(in srgb, var(--teal) 10%, transparent);color:var(--teal);border-color:color-mix(in srgb, var(--teal) 22%, transparent);}
+  .todo-scope .exp-btn{background:var(--ts1);border:1px solid var(--tb1);border-radius:12px;padding:9px 14px;font-size:12px;font-weight:600;color:var(--tt3);transition:all .2s;white-space:nowrap;}
+  .todo-scope .exp-btn:hover{background:color-mix(in srgb, var(--brass) 10%, transparent);color:var(--brass);border-color:color-mix(in srgb, var(--brass) 22%, transparent);}
+
+  .todo-scope .add-section{margin-bottom:18px;}
+  .todo-scope .add-card{background:var(--tbg2);border:1px solid var(--tb1);border-radius:2px;overflow:hidden;transition:border-color .25s;}
+  .todo-scope .add-card:focus-within{border-color:color-mix(in srgb, var(--brass) 45%, transparent);}
+  .todo-scope .add-main{display:flex;align-items:center;gap:11px;padding:15px 18px;}
+  @media(max-width:599px){.todo-scope .add-main{padding:14px 16px;}}
+  .todo-scope .add-divider{height:1px;background:var(--tdiv);}
+  .todo-scope .add-note-row{padding:10px 18px;}
+  @media(max-width:599px){.todo-scope .add-note-row{padding:10px 16px;}}
+  .todo-scope .add-ico{opacity:.3;flex-shrink:0;transition:opacity .2s;color:var(--tt1);}
+  .todo-scope .add-card:focus-within .add-ico{opacity:.6;color:var(--brass);}
+  .todo-scope .add-inp{background:transparent;border:none;outline:none;font-size:15px;font-weight:500;color:var(--tt1);flex:1;letter-spacing:-.01em;min-height:24px;}
+  .todo-scope .add-inp::placeholder{color:var(--tt4);}
+  .todo-scope .note-inp{width:100%;background:transparent;border:none;outline:none;font-size:13px;font-weight:400;color:var(--tt3);font-style:italic;}
+  .todo-scope .note-inp::placeholder{color:var(--tt5);}
+  .todo-scope .add-bottom{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:12px 18px;background:var(--tinp-bg);border-top:1px solid var(--tdiv);}
+  @media(max-width:599px){.todo-scope .add-bottom{padding:12px 16px;gap:8px;}}
+  .todo-scope .chip-row{display:flex;gap:4px;flex-wrap:wrap;}
+  .todo-scope .todo-chip{border:none;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:100px;transition:all .22s;opacity:.32;cursor:pointer;min-height:28px;display:flex;align-items:center;}
+  .todo-scope .todo-chip.on{opacity:1;}
+  .todo-scope .todo-chip:hover:not(.on){opacity:.7;}
+  .todo-scope .pchip{background:transparent;border:1.5px solid transparent;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:5px 10px;border-radius:100px;transition:all .2s;opacity:.35;cursor:pointer;min-height:28px;display:flex;align-items:center;}
+  .todo-scope .pchip.on{opacity:1;}
+  .todo-scope .date-wrap{position:relative;display:inline-flex;align-items:center;}
+  .todo-scope .due-inp{background:var(--ts1);border:1px solid var(--tb1);border-radius:8px;padding:6px 30px 6px 10px;font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:500;color:var(--tt2);outline:none;transition:all .2s;min-height:32px;width:130px;}
+  .todo-scope .due-inp:focus{border-color:color-mix(in srgb, var(--brass) 45%, transparent);}
+  .todo-scope .due-inp::placeholder{color:var(--tt4);}
+  .todo-scope .cal-btn{position:absolute;right:7px;background:none;border:none;padding:0;opacity:.4;cursor:pointer;display:flex;align-items:center;transition:opacity .18s;color:var(--tt2);}
+  .todo-scope .cal-btn:hover{opacity:.8;}
+  .todo-scope #hiddenDate{position:absolute;opacity:0;pointer-events:none;width:0;height:0;}
+  .todo-scope .add-btn{background:var(--brass);border:none;color:var(--paper);font-weight:600;font-size:13px;padding:9px 18px;border-radius:100px;transition:all .2s;white-space:nowrap;letter-spacing:-.01em;margin-left:auto;min-height:36px;}
+  .todo-scope .add-btn:hover{opacity:.88;}
+  .todo-scope .add-btn:active{transform:scale(.96);}
+  @media(max-width:599px){.todo-scope .add-btn{padding:10px 18px;font-size:14px;min-height:40px;}}
+
+  .todo-scope .ftabs{display:flex;gap:2px;background:var(--ts1);border:1px solid var(--tb1);border-radius:14px;padding:4px;margin-bottom:18px;}
+  .todo-scope .ftab{flex:1;background:none;border:none;font-size:11.5px;font-weight:600;padding:7px 6px;border-radius:10px;color:var(--tt3);transition:all .2s;white-space:nowrap;}
+  .todo-scope .ftab:hover{color:var(--tt2);}
+  .todo-scope .ftab.on{background:var(--tbg2);color:var(--tt1);}
+  @media(max-width:599px){.todo-scope .ftabs{display:none;}}
+
+  .todo-scope .task-card{background:var(--tbg2);border:1px solid var(--tb1);border-radius:2px;overflow:hidden;margin-bottom:8px;}
+  .todo-scope .t-item{display:flex;align-items:flex-start;gap:13px;padding:15px 20px;transition:background .15s;position:relative;}
+  @media(max-width:599px){.todo-scope .t-item{padding:14px 16px;gap:12px;}}
+  .todo-scope .t-item:not(:last-child){border-bottom:1px solid var(--tdiv);}
+  .todo-scope .t-item:hover{background:var(--ts1);}
+  .todo-scope .t-item.entering{animation:todoin .34s cubic-bezier(.25,.46,.45,.94) both;}
+  .todo-scope .t-item.leaving{animation:todoout .22s cubic-bezier(.55,0,1,.45) forwards;pointer-events:none;}
+  @keyframes todoin{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes todoout{to{opacity:0;transform:translateX(16px);max-height:0;padding-top:0;padding-bottom:0;}}
+  .todo-scope .chk-col{padding-top:2px;flex-shrink:0;}
+  .todo-scope .chk{width:22px;height:22px;border-radius:50%;border:1.8px solid var(--tchk-border);display:flex;align-items:center;justify-content:center;transition:all .28s cubic-bezier(.34,1.56,.64,1);background:transparent;cursor:pointer;}
+  @media(max-width:599px){.todo-scope .chk{width:24px;height:24px;}}
+  .todo-scope .chk:hover{border-color:color-mix(in srgb, var(--brass) 55%, transparent);transform:scale(1.08);}
+  .todo-scope .chk.done{background:var(--teal);border-color:var(--teal);transform:scale(1.04);}
+  .todo-scope .chk svg{opacity:0;transform:scale(.3) rotate(-15deg);transition:all .22s cubic-bezier(.34,1.56,.64,1);}
+  .todo-scope .chk.done svg{opacity:1;transform:scale(1) rotate(0);}
+  .todo-scope .t-body{flex:1;min-width:0;}
+  .todo-scope .t-text{font-size:14px;font-weight:500;color:var(--tt2);letter-spacing:-.01em;line-height:1.55;cursor:pointer;transition:all .25s;word-break:break-word;}
+  @media(max-width:599px){.todo-scope .t-text{font-size:15px;}}
+  .todo-scope .t-text:hover{color:var(--tt1);}
+  .todo-scope .t-text.done{opacity:.3;text-decoration:line-through;}
+  .todo-scope .t-edit{background:color-mix(in srgb, var(--brass) 8%, transparent);border:1px solid color-mix(in srgb, var(--brass) 35%, transparent);border-radius:8px;outline:none;font-size:14px;font-weight:500;color:var(--tt1);letter-spacing:-.01em;width:100%;padding:5px 10px;margin-bottom:4px;}
+  .todo-scope .t-note{font-size:12px;color:var(--tt3);line-height:1.55;margin-top:4px;margin-bottom:5px;font-weight:400;font-style:italic;}
+  .todo-scope .t-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px;}
+  .todo-scope .tbadge{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:100px;}
+  .todo-scope .pdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+  .todo-scope .plbl{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
+  .todo-scope .dlbl{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;color:var(--tt3);}
+  .todo-scope .dlbl.overdue{color:var(--rust);}
+  .todo-scope .dlbl.today,.todo-scope .dlbl.soon{color:var(--brass);}
+  .todo-scope .clbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--tt5);font-weight:500;}
+
+  .todo-scope .t-acts{display:flex;gap:3px;opacity:0;transition:opacity .15s;flex-shrink:0;padding-top:1px;}
+  .todo-scope .t-item:hover .t-acts{opacity:1;}
+  @media(max-width:599px){.todo-scope .t-acts{opacity:1;} .todo-scope .t-acts .abt.pin,.todo-scope .t-acts .abt.edit{display:none;}}
+  .todo-scope .abt{background:none;border:none;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:all .18s;color:var(--tt3);}
+  .todo-scope .abt.edit:hover{background:color-mix(in srgb, var(--brass) 12%, transparent);color:var(--brass);}
+  .todo-scope .abt.del:hover,.todo-scope .abt.del:active{background:color-mix(in srgb, var(--rust) 12%, transparent);color:var(--rust);}
+  .todo-scope .abt.pin:hover{background:color-mix(in srgb, var(--brass) 12%, transparent);color:var(--brass);}
+  .todo-scope .t-item.pinned{border-left:2.5px solid var(--brass);}
+
+  .todo-scope .empty{text-align:center;padding:70px 20px;}
+  .todo-scope .empty-ico{font-size:28px;margin-bottom:12px;opacity:.2;font-family:'Cormorant Garamond',serif;}
+  .todo-scope .empty-txt{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:19px;color:var(--tt3);}
+
+  .todo-scope footer{border-top:1px solid var(--tdiv);padding:20px 0;margin-top:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+  @media(max-width:599px){.todo-scope footer{display:none;}}
+  .todo-scope .ft-left{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tt4);font-weight:500;}
+  .todo-scope .ft-right{display:flex;gap:14px;}
+  .todo-scope .kbds{display:flex;align-items:center;gap:4px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--tt4);font-weight:500;}
+  .todo-scope .key{background:var(--ts1);border:1px solid var(--tb1);border-radius:4px;padding:1px 6px;font-size:10px;color:var(--tt3);}
+
+  .todo-scope .mob-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--tbottom-bar);border-top:1px solid var(--tb1);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:8px 12px calc(8px + env(safe-area-inset-bottom));z-index:800;}
+  @media(max-width:599px){.todo-scope .mob-bar{display:block;}}
+  .todo-scope .mob-bar-inner{display:flex;gap:0;max-width:500px;margin:0 auto;}
+  .todo-scope .mob-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;padding:6px 4px;border-radius:12px;color:var(--tt4);transition:all .2s;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;letter-spacing:.03em;}
+  .todo-scope .mob-tab svg{transition:all .2s;}
+  .todo-scope .mob-tab.on{color:var(--brass);}
+  .todo-scope .mob-tab.on svg{transform:scale(1.12);}
+  .todo-scope .mob-tab:active{transform:scale(.94);}
+
+  .todo-scope .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:850;opacity:0;pointer-events:none;transition:opacity .25s;}
+  .todo-scope .sheet-overlay.open{opacity:1;pointer-events:all;}
+  .todo-scope .sheet{position:fixed;bottom:0;left:0;right:0;background:var(--tsheet-bg);border-radius:2px 2px 0 0;border-top:1px solid var(--tb1);padding:12px 20px calc(28px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .32s cubic-bezier(.25,.46,.45,.94);z-index:860;max-height:90vh;overflow-y:auto;}
+  .todo-scope .sheet.open{transform:translateY(0);}
+  .todo-scope .sheet-handle{width:36px;height:4px;background:var(--tb2);border-radius:2px;margin:0 auto 20px;}
+  .todo-scope .sheet-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:20px;color:var(--tt1);margin-bottom:18px;}
+  .todo-scope .sheet-section{margin-bottom:20px;}
+  .todo-scope .sheet-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--tt4);margin-bottom:10px;}
+  .todo-scope .sheet-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .todo-scope .s-chip{background:var(--ts1);border:1px solid var(--tb1);border-radius:100px;padding:8px 14px;font-size:12px;font-weight:600;color:var(--tt2);transition:all .2s;}
+  .todo-scope .s-chip.on{background:color-mix(in srgb, var(--brass) 15%, transparent);border-color:color-mix(in srgb, var(--brass) 45%, transparent);color:var(--brass);}
+  .todo-scope .sheet-actions{display:flex;gap:8px;margin-top:4px;}
+  .todo-scope .sheet-act{flex:1;background:var(--ts1);border:1px solid var(--tb1);border-radius:14px;padding:13px;font-size:13px;font-weight:600;color:var(--tt2);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .todo-scope .sheet-act.wa{background:color-mix(in srgb, var(--teal) 10%, transparent);border-color:color-mix(in srgb, var(--teal) 22%, transparent);color:var(--teal);}
+  .todo-scope .sheet-act.exp{background:color-mix(in srgb, var(--brass) 10%, transparent);border-color:color-mix(in srgb, var(--brass) 22%, transparent);color:var(--brass);}
+  .todo-scope .sheet-act.clr{background:color-mix(in srgb, var(--rust) 10%, transparent);border-color:color-mix(in srgb, var(--rust) 20%, transparent);color:var(--rust);}
+  .todo-scope .sheet-sel{width:100%;background:var(--ts1);border:1px solid var(--tb1);border-radius:12px;padding:11px 14px;font-size:13px;font-weight:600;color:var(--tt2);outline:none;appearance:none;transition:all .2s;}
+
+  .todo-scope .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;z-index:900;opacity:0;pointer-events:none;transition:opacity .25s;}
+  @media(min-width:600px){.todo-scope .modal-overlay{align-items:center;}}
+  .todo-scope .modal-overlay.open{opacity:1;pointer-events:all;}
+  .todo-scope .modal{background:var(--tmodal-bg);border:1px solid var(--tmodal-border);border-radius:2px 2px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom));width:100%;transform:translateY(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94);}
+  @media(min-width:600px){.todo-scope .modal{border-radius:2px;width:360px;padding:28px 24px 22px;transform:scale(.93) translateY(12px);}}
+  .todo-scope .modal-overlay.open .modal{transform:translateY(0);}
+  @media(min-width:600px){.todo-scope .modal-overlay.open .modal{transform:scale(1) translateY(0);}}
+  .todo-scope .modal-handle{width:36px;height:4px;background:var(--tb2);border-radius:2px;margin:0 auto 16px;}
+  @media(min-width:600px){.todo-scope .modal-handle{display:none;}}
+  .todo-scope .modal-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;color:var(--tt1);margin-bottom:4px;}
+  .todo-scope .modal-sub{font-size:12px;color:var(--tt3);margin-bottom:18px;font-weight:500;}
+  .todo-scope .exp-opts{display:flex;flex-direction:column;gap:7px;margin-bottom:16px;}
+  .todo-scope .exp-opt{background:var(--tmodal-opt);border:1px solid var(--tmodal-border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .18s;text-align:left;width:100%;min-height:56px;}
+  .todo-scope .exp-opt:hover{background:var(--tmodal-opt-hover);border-color:var(--tb2);}
+  .todo-scope .exp-opt:active{transform:scale(.98);}
+  .todo-scope .exp-ico{font-size:20px;width:32px;text-align:center;flex-shrink:0;}
+  .todo-scope .exp-name{display:block;font-size:14px;font-weight:600;letter-spacing:-.02em;color:var(--tt1);margin-bottom:2px;}
+  .todo-scope .exp-desc{display:block;font-size:11px;color:var(--tt3);font-weight:500;}
+  .todo-scope .modal-cancel{width:100%;background:none;border:1px solid var(--tb1);border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:var(--tt3);transition:all .18s;}
+  .todo-scope .modal-cancel:hover{color:var(--tt2);background:var(--ts1);}
 </style>
 </head>
 <body data-theme="dark">
+
+<!-- MAINTENANCE SCREEN -->
+<div class="maint-screen hidden" id="maintScreen">
+  <div class="maint-card">
+    <p class="maint-eyebrow">Ephemeral / Schedule</p>
+    <h1 class="maint-title">Back in a moment</h1>
+    <p class="maint-msg" id="maintMessage">Polishing a few things behind the scenes.</p>
+    <div class="maint-line"></div>
+    <p class="maint-foot">— Yagnik N.</p>
+  </div>
+</div>
 
 <!-- AUTH SCREEN -->
 <div class="auth-screen" id="authScreen">
@@ -177,6 +426,13 @@
       <button class="icon-btn" id="logoutBtn" title="Sign out">⎋</button>
     </div>
   </div>
+
+  <div class="view-tabs">
+    <button class="pill-btn on" id="tabScheduleBtn">Schedule</button>
+    <button class="pill-btn" id="tabTodoBtn">Todos</button>
+  </div>
+
+  <div id="scheduleView">
 
   <div class="hero" id="heroBox">
     <p class="hero-eyebrow">Next up</p>
@@ -213,6 +469,234 @@
       <h3>Open blocks today</h3>
       <div id="gapsList"><p class="gap-item">No gaps found yet.</p></div>
     </div>
+  </div>
+
+  </div>
+
+  <div class="todo-scope hidden" id="todoView">
+  <div class="todo-wrap">
+
+    <header>
+      <div class="hdr-top">
+        <div>
+          <div class="brand">Personal Workspace</div>
+          <div class="page-title"><span class="title-line1">Ephemeral's</span><span class="title-line2">Todos.</span></div>
+        </div>
+        <div class="hdr-right">
+          <div class="hdr-date" id="hdrDate">—</div>
+          <div class="hdr-time" id="hdrTime">—</div>
+        </div>
+      </div>
+      <div class="stats" id="statsRow"></div>
+      <div class="prog-wrap">
+        <div class="prog-lbl"><span>Completion</span><span id="progPct">0%</span></div>
+        <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+      </div>
+    </header>
+
+    <div class="mob-actions">
+      <div class="mob-search-wrap">
+        <svg class="mob-search-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="5.8" cy="5.8" r="4.2" stroke-width="1.4"/>
+          <path d="M9.2 9.2L12.5 12.5" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <input class="mob-search-inp" id="mobSearchInp" placeholder="Search tasks…" oninput="todoOnMobSearch()"/>
+      </div>
+      <button class="mob-filter-btn" id="mobFilterBtn" onclick="todoOpenSheet()" title="Filters">
+        <svg width="17" height="14" viewBox="0 0 17 14" fill="none">
+          <path d="M1 1h15M4 7h9M7 13h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="controls">
+      <div class="search-wrap">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="5.8" cy="5.8" r="4.2" stroke-width="1.4"/>
+          <path d="M9.2 9.2L12.5 12.5" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <input class="search-inp" id="searchInp" placeholder="Search tasks…" oninput="todoRender()"/>
+      </div>
+      <div class="sel-wrap">
+        <select class="ctrl-sel" id="tagFilter" onchange="todoRender()">
+          <option value="">All tags</option>
+          <option value="music">Music Class</option>
+          <option value="payments">Payment(s)</option>
+          <option value="study">Study</option>
+          <option value="personal">Personal</option>
+          <option value="urgent">Urgent</option>
+        </select>
+        <svg class="sel-arr" width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="sel-wrap">
+        <select class="ctrl-sel" id="sortBy" onchange="todoRender()">
+          <option value="pinned">Pinned first</option>
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="priority">By priority</option>
+          <option value="due">By due date</option>
+          <option value="alpha">A → Z</option>
+        </select>
+        <svg class="sel-arr" width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <button class="ctrl-btn" onclick="todoClearDone()">Clear done</button>
+      <button class="wa-btn" onclick="todoShareWhatsApp()">WhatsApp ↗</button>
+      <button class="exp-btn" onclick="todoOpenExport()">Export ↓</button>
+    </div>
+
+    <div class="add-section">
+      <div class="add-card">
+        <div class="add-main">
+          <svg class="add-ico" width="17" height="17" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="9" r="7.5" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M9 5.5v7M5.5 9h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <input class="add-inp" id="addInp" placeholder="What needs to get done?"/>
+        </div>
+        <div class="add-divider"></div>
+        <div class="add-note-row">
+          <input class="note-inp" id="noteInp" placeholder="Add a note… (optional)"/>
+        </div>
+        <div class="add-bottom">
+          <div class="chip-row" id="tagChips"></div>
+          <div class="chip-row" id="priChips"></div>
+          <div class="date-wrap">
+            <input type="text" class="due-inp" id="dueInp" placeholder="yyyy/mm/dd" maxlength="10" oninput="todoFmtDateInput(this)" autocomplete="off"/>
+            <button class="cal-btn" onclick="document.getElementById('hiddenDate').showPicker()" title="Pick date">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <rect x="1" y="2.5" width="12" height="10.5" rx="2" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M1 5.5h12" stroke="currentColor" stroke-width="1.3"/>
+                <path d="M4 1v3M10 1v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <input type="date" id="hiddenDate" onchange="const v=this.value;if(v){const p=v.split('-');document.getElementById('dueInp').value=p[0]+'/'+p[1]+'/'+p[2];}this.value='';" />
+          </div>
+          <button class="add-btn" onclick="todoAddTask()">Add Task ↵</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="ftabs">
+      <button class="ftab on" onclick="todoSetFilter('all',this)">All</button>
+      <button class="ftab" onclick="todoSetFilter('pending',this)">Pending</button>
+      <button class="ftab" onclick="todoSetFilter('done',this)">Done</button>
+      <button class="ftab" onclick="todoSetFilter('overdue',this)">Overdue</button>
+      <button class="ftab" onclick="todoSetFilter('today',this)">Today</button>
+      <button class="ftab" onclick="todoSetFilter('pinned',this)">Pinned</button>
+    </div>
+
+    <div id="taskList"></div>
+
+    <footer>
+      <span class="ft-left">Yagnik!</span>
+      <div class="ft-right">
+        <div class="kbds"><span class="key">⏎</span> add</div>
+        <div class="kbds"><span class="key">/</span> search</div>
+        <div class="kbds"><span class="key">Esc</span> cancel</div>
+      </div>
+    </footer>
+  </div>
+
+  <nav class="mob-bar">
+    <div class="mob-bar-inner">
+      <button class="mob-tab on" id="mbt-all" onclick="todoMobSetFilter('all',this)">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="14" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M6 7h8M6 10.5h6M6 14h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        All
+      </button>
+      <button class="mob-tab" id="mbt-pending" onclick="todoMobSetFilter('pending',this)">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.6"/><path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        Pending
+      </button>
+      <button class="mob-tab" id="mbt-done" onclick="todoMobSetFilter('done',this)">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 10.5l2.5 2.5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Done
+      </button>
+      <button class="mob-tab" id="mbt-pinned" onclick="todoMobSetFilter('pinned',this)">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M8.5 2h3M10 2v4l3 3H7l3-3V2zM10 9v7M8 16h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Pinned
+      </button>
+      <button class="mob-tab" onclick="todoOpenSheet()">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.6"/><path d="M10 7v6M7 10h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        More
+      </button>
+    </div>
+  </nav>
+
+  <div class="sheet-overlay" id="sheetOverlay" onclick="todoCloseSheet()">
+    <div class="sheet" id="sheet" onclick="event.stopPropagation()">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Filters & Actions</div>
+      <div class="sheet-section">
+        <div class="sheet-lbl">Filter by</div>
+        <div class="sheet-row" id="sheetFilters">
+          <button class="s-chip on" onclick="todoSheetSetFilter('all',this)">All</button>
+          <button class="s-chip" onclick="todoSheetSetFilter('pending',this)">Pending</button>
+          <button class="s-chip" onclick="todoSheetSetFilter('done',this)">Done</button>
+          <button class="s-chip" onclick="todoSheetSetFilter('overdue',this)">Overdue</button>
+          <button class="s-chip" onclick="todoSheetSetFilter('today',this)">Today</button>
+          <button class="s-chip" onclick="todoSheetSetFilter('pinned',this)">Pinned</button>
+        </div>
+      </div>
+      <div class="sheet-section">
+        <div class="sheet-lbl">Tag</div>
+        <select class="sheet-sel" id="sheetTagFilter" onchange="document.getElementById('tagFilter').value=this.value;todoRender();">
+          <option value="">All tags</option>
+          <option value="music">Music Class</option>
+          <option value="payments">Payment(s)</option>
+          <option value="study">Study</option>
+          <option value="personal">Personal</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+      <div class="sheet-section">
+        <div class="sheet-lbl">Sort by</div>
+        <select class="sheet-sel" id="sheetSortBy" onchange="document.getElementById('sortBy').value=this.value;todoRender();">
+          <option value="pinned">Pinned first</option>
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="priority">By priority</option>
+          <option value="due">By due date</option>
+          <option value="alpha">A → Z</option>
+        </select>
+      </div>
+      <div class="sheet-section">
+        <div class="sheet-lbl">Actions</div>
+        <div class="sheet-actions">
+          <button class="sheet-act wa" onclick="todoCloseSheet();todoShareWhatsApp();">WhatsApp</button>
+          <button class="sheet-act exp" onclick="todoCloseSheet();todoOpenExport();">Export</button>
+          <button class="sheet-act clr" onclick="todoCloseSheet();todoClearDone();">Clear done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="exportModal" onclick="if(event.target===this)todoCloseExport()">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Export Tasks</div>
+      <div class="modal-sub">Choose your format</div>
+      <div class="exp-opts">
+        <button class="exp-opt" onclick="todoDoExport('txt')">
+          <span class="exp-ico">📄</span>
+          <div><span class="exp-name">TXT</span><span class="exp-desc">Plain text, works everywhere</span></div>
+        </button>
+        <button class="exp-opt" onclick="todoDoExport('csv')">
+          <span class="exp-ico">📊</span>
+          <div><span class="exp-name">CSV / Excel</span><span class="exp-desc">Open in Google Sheets or Excel</span></div>
+        </button>
+        <button class="exp-opt" onclick="todoDoExport('md')">
+          <span class="exp-ico">📝</span>
+          <div><span class="exp-name">MD Markdown</span><span class="exp-desc">For Notion, Obsidian, GitHub</span></div>
+        </button>
+        <button class="exp-opt" onclick="todoDoExport('pdf')">
+          <span class="exp-ico">🖨</span>
+          <div><span class="exp-name">PDF</span><span class="exp-desc">Print or save as PDF via browser</span></div>
+        </button>
+      </div>
+      <button class="modal-cancel" onclick="todoCloseExport()">Cancel</button>
+    </div>
+  </div>
+
   </div>
 
   <p style="text-align:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:56px; letter-spacing:.03em;">Made by Yagnik N. ❤️</p>
@@ -252,6 +736,28 @@
 const SUPABASE_URL = 'https://urbxdarbprlhbebbxxuv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyYnhkYXJicHJsaGJlYmJ4eHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzMzY4NDAsImV4cCI6MjEwMTkxMjg0MH0.-s4SNuzQRLMfyCck8R46FARDcWL6Rg3OXYBy32SUEAU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ---------- maintenance mode ----------
+// Flip this to true, edit the message below if you want, then re-upload the file
+// to show everyone a maintenance screen instead of the app. Flip back to false
+// and re-upload when you're done. No database, no dashboard — just this file.
+const MAINTENANCE_MODE = false;
+const MAINTENANCE_MESSAGE = 'Polishing a few things behind the scenes.';
+// While MAINTENANCE_MODE is true, open the site with ?preview=<key below> in the
+// URL to bypass the screen and keep testing your own changes.
+const MAINTENANCE_BYPASS_KEY = 'yags-preview-2026';
+let maintenanceActive = false;
+function checkMaintenance(){
+  const bypass = new URLSearchParams(location.search).get('preview') === MAINTENANCE_BYPASS_KEY;
+  if(bypass) return false;
+  if(MAINTENANCE_MODE){
+    maintenanceActive = true;
+    document.getElementById('maintMessage').textContent = MAINTENANCE_MESSAGE;
+    document.getElementById('maintScreen').classList.remove('hidden');
+    return true;
+  }
+  return false;
+}
 
 const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const DAY_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -307,6 +813,7 @@ document.getElementById('logoutBtn').onclick = async ()=>{
 };
 
 sb.auth.onAuthStateChange((event, session)=>{
+  if(maintenanceActive) return;
   if(session && session.user){
     currentUser = session.user;
     document.getElementById('authScreen').classList.add('hidden');
@@ -629,12 +1136,338 @@ function checkNotifications(){
   });
 }
 
+// ---------- todos ----------
+const TODO_TAGS={
+  music:    {lbl:'Music Class',c:'#B8894F',bg:'rgba(184,137,79,.15)'},
+  payments: {lbl:'Payment(s)', c:'#5AC8FA',bg:'rgba(90,200,250,.13)'},
+  study:    {lbl:'Study',      c:'#BF5AF2',bg:'rgba(191,90,242,.13)'},
+  personal: {lbl:'Personal',   c:'#FF6B81',bg:'rgba(255,107,129,.13)'},
+  urgent:   {lbl:'Urgent',     c:'#A64B3B',bg:'rgba(166,75,59,.16)'},
+};
+const TODO_PRI={
+  high:  {lbl:'High',c:'#A64B3B',bg:'rgba(166,75,59,.14)', ord:0},
+  medium:{lbl:'Med', c:'#B8894F',bg:'rgba(184,137,79,.14)',ord:1},
+  low:   {lbl:'Low', c:'#4B7A74',bg:'rgba(75,122,116,.13)', ord:2},
+};
+let todoTasks=JSON.parse(localStorage.getItem('ephemeral_todos_v1')||'[]');
+let todoSelTag='music';
+let todoSelPri='medium';
+let todoFilter='all';
+let todoEditing=null;
+
+function todoSave(){localStorage.setItem('ephemeral_todos_v1',JSON.stringify(todoTasks));}
+const todoTodayISO=()=>new Date().toISOString().slice(0,10);
+function todoFmtYMD(s){return s?s.replace(/-/g,'/'):'';}
+function todoTick(){
+  const n=new Date();
+  const ymd=n.toISOString().slice(0,10).replace(/-/g,'/');
+  const dow=n.toLocaleDateString('en-IN',{weekday:'short'}).toUpperCase();
+  const de=document.getElementById('hdrDate'); if(de) de.textContent=dow+' '+ymd;
+  const te=document.getElementById('hdrTime'); if(te) te.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+}
+setInterval(todoTick,1000);
+
+function todoDueStatus(d){
+  if(!d)return null; const t=todoTodayISO();
+  if(d<t)return'overdue'; if(d===t)return'today';
+  return(new Date(d)-new Date())/86400000<=3?'soon':'future';
+}
+function todoFmtDue(d){
+  if(!d)return''; const t=todoTodayISO();
+  if(d===t)return'● Due today';
+  if(d<t){const days=Math.round((new Date(t+'T00:00:00')-new Date(d+'T00:00:00'))/86400000);return`▲ Overdue ${days}d`;}
+  return'Due '+todoFmtYMD(d);
+}
+function todoFmtDate(ts){return new Date(ts).toISOString().slice(0,10).replace(/-/g,'/');}
+
+function todoBuildChips(){
+  const tc=document.getElementById('tagChips'); if(!tc)return;
+  tc.innerHTML='';
+  Object.entries(TODO_TAGS).forEach(([tag,{lbl,c,bg}])=>{
+    const b=document.createElement('button');
+    b.className='todo-chip'+(todoSelTag===tag?' on':'');
+    b.textContent=lbl; b.style.background=bg; b.style.color=c;
+    b.onclick=()=>{todoSelTag=tag; todoBuildChips();};
+    tc.appendChild(b);
+  });
+  const pc=document.getElementById('priChips'); if(!pc)return;
+  pc.innerHTML='';
+  Object.entries(TODO_PRI).forEach(([p,{c,bg,lbl}])=>{
+    const b=document.createElement('button');
+    b.className='pchip'+(todoSelPri===p?' on':'');
+    b.textContent='● '+lbl; b.style.color=c;
+    if(todoSelPri===p){b.style.borderColor=c; b.style.background=bg;}
+    b.onclick=()=>{todoSelPri=p; todoBuildChips();};
+    pc.appendChild(b);
+  });
+}
+
+function todoFmtDateInput(el){
+  let v=el.value.replace(/[^\d]/g,'');
+  if(v.length>4)v=v.slice(0,4)+'/'+v.slice(4);
+  if(v.length>7)v=v.slice(0,7)+'/'+v.slice(7);
+  el.value=v.slice(0,10);
+}
+function todoParseDueDate(){
+  const v=document.getElementById('dueInp').value.trim();
+  if(!v)return'';
+  const m=v.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  if(!m)return'';
+  const iso=`${m[1]}-${m[2]}-${m[3]}`;
+  return isNaN(new Date(iso).getTime())?'':iso;
+}
+
+function todoAddTask(){
+  const txt=document.getElementById('addInp').value.trim();
+  if(!txt){document.getElementById('addInp').focus(); return;}
+  todoTasks.unshift({id:Date.now(), text:txt,
+    note:document.getElementById('noteInp').value.trim(),
+    tag:todoSelTag, priority:todoSelPri, done:false, pinned:false,
+    dueDate:todoParseDueDate(), createdAt:Date.now(), completedAt:null});
+  document.getElementById('addInp').value='';
+  document.getElementById('noteInp').value='';
+  document.getElementById('dueInp').value='';
+  todoSave(); todoRender(); showToast('Task added ✓');
+}
+function todoToggle(id){
+  const t=todoTasks.find(t=>t.id===id); if(!t)return;
+  t.done=!t.done; t.completedAt=t.done?Date.now():null;
+  if(t.done) showToast('Done! 🎉');
+  todoSave(); todoRender();
+}
+function todoDel(id){
+  const el=document.getElementById('ti-'+id);
+  if(el){ el.classList.add('leaving'); setTimeout(()=>{todoTasks=todoTasks.filter(t=>t.id!==id); todoSave(); todoRender();},210); }
+  else{ todoTasks=todoTasks.filter(t=>t.id!==id); todoSave(); todoRender(); }
+  showToast('Deleted');
+}
+function todoPin(id){
+  const t=todoTasks.find(t=>t.id===id); if(!t)return;
+  t.pinned=!t.pinned; showToast(t.pinned?'Pinned 📌':'Unpinned'); todoSave(); todoRender();
+}
+function todoStartEdit(id){
+  todoEditing=id; todoRender();
+  setTimeout(()=>{const i=document.getElementById('ei-'+id); if(i){i.focus(); i.select();}},20);
+}
+function todoSaveEdit(id){
+  const inp=document.getElementById('ei-'+id); if(!inp)return;
+  const v=inp.value.trim();
+  if(v){const t=todoTasks.find(t=>t.id===id); if(t)t.text=v;}
+  todoEditing=null; todoSave(); todoRender();
+}
+function todoCancelEdit(){todoEditing=null; todoRender();}
+function todoClearDone(){
+  const c=todoTasks.filter(t=>t.done).length;
+  todoTasks=todoTasks.filter(t=>!t.done); todoSave(); todoRender();
+  showToast(`Cleared ${c} task${c!==1?'s':''}`);
+}
+
+function todoOpenSheet(){document.getElementById('sheetOverlay').classList.add('open'); document.getElementById('sheet').classList.add('open');}
+function todoCloseSheet(){document.getElementById('sheetOverlay').classList.remove('open'); document.getElementById('sheet').classList.remove('open');}
+function todoSheetSetFilter(f,btn){
+  document.querySelectorAll('#sheetFilters .s-chip').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  todoSetFilterRaw(f); todoUpdateMobTabs();
+}
+function todoOnMobSearch(){
+  document.getElementById('searchInp').value=document.getElementById('mobSearchInp').value;
+  todoRender();
+}
+function todoSetFilter(f,btn){
+  todoSetFilterRaw(f);
+  document.querySelectorAll('.todo-scope .ftab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+function todoMobSetFilter(f,btn){
+  todoSetFilterRaw(f); todoUpdateMobTabs();
+  document.querySelectorAll('#sheetFilters .s-chip').forEach((b,i)=>{
+    const filters=['all','pending','done','overdue','today','pinned'];
+    b.classList.toggle('on', filters[i]===f);
+  });
+}
+function todoSetFilterRaw(f){todoFilter=f; todoRender();}
+function todoUpdateMobTabs(){
+  ['all','pending','done','pinned'].forEach(f=>{
+    const el=document.getElementById('mbt-'+f);
+    if(el) el.classList.toggle('on', todoFilter===f);
+  });
+}
+
+function todoGetFiltered(){
+  let list=[...todoTasks];
+  const q=(document.getElementById('searchInp').value||document.getElementById('mobSearchInp').value||'').trim().toLowerCase();
+  const tf=document.getElementById('tagFilter').value;
+  const sb=document.getElementById('sortBy').value;
+  if(q) list=list.filter(t=>t.text.toLowerCase().includes(q)||(t.note||'').toLowerCase().includes(q));
+  if(tf) list=list.filter(t=>t.tag===tf);
+  if(todoFilter==='pending') list=list.filter(t=>!t.done);
+  else if(todoFilter==='done') list=list.filter(t=>t.done);
+  else if(todoFilter==='overdue') list=list.filter(t=>!t.done&&t.dueDate&&t.dueDate<todoTodayISO());
+  else if(todoFilter==='today') list=list.filter(t=>!t.done&&t.dueDate===todoTodayISO());
+  else if(todoFilter==='pinned') list=list.filter(t=>t.pinned);
+  if(sb==='pinned') list.sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(b.createdAt-a.createdAt));
+  else if(sb==='newest') list.sort((a,b)=>b.createdAt-a.createdAt);
+  else if(sb==='oldest') list.sort((a,b)=>a.createdAt-b.createdAt);
+  else if(sb==='priority') list.sort((a,b)=>(TODO_PRI[a.priority]?.ord??1)-(TODO_PRI[b.priority]?.ord??1));
+  else if(sb==='due') list.sort((a,b)=>{if(!a.dueDate&&!b.dueDate)return 0; if(!a.dueDate)return 1; if(!b.dueDate)return-1; return a.dueDate.localeCompare(b.dueDate);});
+  else if(sb==='alpha') list.sort((a,b)=>a.text.localeCompare(b.text));
+  return list;
+}
+
+function todoRender(){
+  todoTick();
+  const pending=todoTasks.filter(t=>!t.done).length;
+  const done=todoTasks.filter(t=>t.done).length;
+  const overdue=todoTasks.filter(t=>!t.done&&t.dueDate&&t.dueDate<todoTodayISO()).length;
+  const pct=todoTasks.length?Math.round(done/todoTasks.length*100):0;
+  document.getElementById('statsRow').innerHTML=
+    `<div class="stat sp">${pending} pending</div>
+     <div class="stat sd">${done} done</div>
+     ${overdue>0?`<div class="stat so">${overdue} overdue</div>`:''}
+     <div class="stat st">${todoTasks.length} total</div>`;
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progPct').textContent=pct+'%';
+
+  const list=todoGetFiltered();
+  const container=document.getElementById('taskList');
+  container.innerHTML='';
+  if(!list.length){
+    const msgs={all:'No tasks yet. Add one above!',pending:"You're all clear.",done:'No completed tasks.',overdue:'No overdue tasks. Well done.',today:'Nothing due today.',pinned:'No pinned tasks.'};
+    container.innerHTML=`<div class="empty"><div class="empty-ico">${todoFilter==='done'?'✓':'◎'}</div><div class="empty-txt">${msgs[todoFilter]||'No tasks found.'}</div></div>`;
+    todoBuildChips(); return;
+  }
+  const card=document.createElement('div'); card.className='task-card';
+  list.forEach((task,i)=>{
+    const{c:tc,bg:tbg,lbl:tlbl}=TODO_TAGS[task.tag]||{c:'#888',bg:'rgba(136,136,136,.1)',lbl:task.tag};
+    const{c:pc}=TODO_PRI[task.priority]||TODO_PRI.medium;
+    const ds=todoDueStatus(task.dueDate);
+    const isEditing=todoEditing===task.id;
+    const item=document.createElement('div');
+    item.className='t-item entering'+(task.pinned?' pinned':'');
+    item.id='ti-'+task.id;
+    item.style.animationDelay=(i*.04)+'s';
+    item.innerHTML=`
+      <div class="chk-col">
+        <div class="chk${task.done?' done':''}" onclick="todoToggle(${task.id})">
+          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+            <path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="t-body">
+        ${isEditing
+          ?`<input class="t-edit" id="ei-${task.id}" value="${task.text.replace(/"/g,'&quot;')}"
+              onkeydown="if(event.key==='Enter')todoSaveEdit(${task.id});if(event.key==='Escape')todoCancelEdit();"
+              onblur="todoSaveEdit(${task.id})" />`
+          :`<div class="t-text${task.done?' done':''}" ondblclick="todoStartEdit(${task.id})">${task.text}</div>`}
+        ${task.note?`<div class="t-note">${task.note}</div>`:''}
+        <div class="t-meta">
+          <span class="tbadge" style="background:${tbg};color:${tc}">${tlbl}</span>
+          <span class="pdot" style="background:${pc}"></span>
+          <span class="plbl" style="color:${pc}">${(TODO_PRI[task.priority]||TODO_PRI.medium).lbl}</span>
+          ${task.dueDate?`<span class="dlbl${ds==='overdue'?' overdue':ds==='today'?' today':ds==='soon'?' soon':''}">${todoFmtDue(task.dueDate)}</span>`:''}
+          <span class="clbl">Added ${todoFmtDate(task.createdAt)}</span>
+          ${task.pinned?`<span style="font-size:10px;color:var(--brass);font-weight:700;">📌</span>`:''}
+        </div>
+      </div>
+      <div class="t-acts">
+        <button class="abt pin" title="${task.pinned?'Unpin':'Pin'}" onclick="todoPin(${task.id})">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M5 1h2M6 1v3l2 2H4L6 4V1zM6 7v4M4 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="abt edit" title="Edit" onclick="todoStartEdit(${task.id})">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 10.5l2.3-.5 6.4-6.4-1.8-1.8-6.4 6.4-.5 2.3z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="abt del" title="Delete" onclick="todoDel(${task.id})">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>`;
+    card.appendChild(item);
+  });
+  container.appendChild(card);
+  todoBuildChips();
+}
+
+function todoOpenExport(){document.getElementById('exportModal').classList.add('open');}
+function todoCloseExport(){document.getElementById('exportModal').classList.remove('open');}
+function todoDl(content,filename,type){
+  const blob=new Blob([content],{type});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=filename; a.click(); URL.revokeObjectURL(a.href);
+}
+function todoDoExport(fmt){
+  todoCloseExport();
+  const d=todoTodayISO().replace(/-/g,'/');
+  const pen=todoTasks.filter(t=>!t.done), don=todoTasks.filter(t=>t.done);
+  if(fmt==='txt'){
+    let out=`YAGNIK'S TODOS — ${d}\n${'─'.repeat(36)}\n\nPENDING (${pen.length})\n`;
+    pen.forEach((t,i)=>{out+=`\n${i+1}. [${(TODO_PRI[t.priority]||TODO_PRI.medium).lbl.toUpperCase()}] ${t.text}`; if(t.note)out+=`\n   Note: ${t.note}`; if(t.dueDate)out+=`\n   Due:  ${todoFmtYMD(t.dueDate)}`; out+=`\n   Tag:  ${(TODO_TAGS[t.tag]||{lbl:t.tag}).lbl}`;});
+    out+=`\n\n${'─'.repeat(36)}\nDONE (${don.length})\n`;
+    don.forEach((t,i)=>out+=`\n${i+1}. ✓ ${t.text}`);
+    todoDl(out,`yagnik-todos-${todoTodayISO()}.txt`,'text/plain'); showToast('Exported as .TXT ↓');
+  }else if(fmt==='csv'){
+    const rows=[['Status','Task','Tag','Priority','Due Date','Note','Added']];
+    todoTasks.forEach(t=>rows.push([t.done?'Done':'Pending',`"${t.text.replace(/"/g,'""')}"`,
+      (TODO_TAGS[t.tag]||{lbl:t.tag}).lbl,(TODO_PRI[t.priority]||TODO_PRI.medium).lbl,
+      todoFmtYMD(t.dueDate)||'',`"${(t.note||'').replace(/"/g,'""')}"`,todoFmtDate(t.createdAt)]));
+    todoDl(rows.map(r=>r.join(',')).join('\n'),`yagnik-todos-${todoTodayISO()}.csv`,'text/csv'); showToast('Exported as .CSV ↓');
+  }else if(fmt==='md'){
+    const lines=[`# Yagnik's Todos — ${d}`,`*Exported from Ephemeral*`,''];
+    if(pen.length){lines.push(`## Pending (${pen.length})`,''); pen.forEach(t=>{lines.push(`- [ ] **${t.text}**`); if(t.note)lines.push(`  > ${t.note}`); if(t.dueDate)lines.push(`  Due: \`${todoFmtYMD(t.dueDate)}\``); lines.push(`  \`${(TODO_TAGS[t.tag]||{lbl:t.tag}).lbl}\` · ${(TODO_PRI[t.priority]||TODO_PRI.medium).lbl} priority`,'');});}
+    if(don.length){lines.push(`## Done (${don.length})`,''); don.forEach(t=>lines.push(`- [x] ~~${t.text}~~`));}
+    todoDl(lines.join('\n'),`yagnik-todos-${todoTodayISO()}.md`,'text/markdown'); showToast('Exported as .MD ↓');
+  }else if(fmt==='pdf'){
+    const w=window.open('','_blank');
+    const pen2=todoTasks.filter(t=>!t.done), don2=todoTasks.filter(t=>t.done);
+    const tr=t=>`<tr><td>${t.text}</td><td>${(TODO_TAGS[t.tag]||{lbl:t.tag}).lbl}</td><td>${(TODO_PRI[t.priority]||TODO_PRI.medium).lbl}</td><td>${todoFmtYMD(t.dueDate)||'—'}</td><td>${t.note||'—'}</td></tr>`;
+    const tr2=t=>`<tr style="color:#999;text-decoration:line-through"><td>${t.text}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>`;
+    w.document.write(`<!DOCTYPE html><html><head><title>Yagnik's Todos</title><style>*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,sans-serif;}body{padding:40px;color:#111;font-size:13px;}h1{font-size:28px;font-weight:800;letter-spacing:-.04em;margin-bottom:4px;}.sub{color:#888;font-size:11px;margin-bottom:28px;}h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#555;margin:24px 0 10px;}table{width:100%;border-collapse:collapse;}th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;padding:6px 10px;border-bottom:1px solid #eee;}td{padding:9px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;}@media print{body{padding:20px;}}</style></head><body><h1>Yagnik's Todos</h1><div class="sub">Exported ${d} · ${todoTasks.length} tasks total</div><h2>Pending (${pen2.length})</h2><table><thead><tr><th>Task</th><th>Tag</th><th>Priority</th><th>Due</th><th>Note</th></tr></thead><tbody>${pen2.map(tr).join('')}</tbody></table>${don2.length?`<h2>Done (${don2.length})</h2><table><thead><tr><th>Task</th><th>Tag</th><th>Priority</th><th>Due</th><th>Note</th></tr></thead><tbody>${don2.map(tr2).join('')}</tbody></table>`:''}</body></html>`);
+    w.document.close(); w.focus(); w.print(); showToast('PDF print dialog opened ↓');
+  }
+}
+function todoShareWhatsApp(){
+  const pen=todoTasks.filter(t=>!t.done);
+  if(!pen.length){showToast('No pending tasks to share!'); return;}
+  let msg=`*Yagnik's Todos* 📋\n_${todoTodayISO().replace(/-/g,'/')}_\n\n`;
+  pen.forEach((t,i)=>{msg+=`${i+1}. ⏳ *${t.text}*`; if(t.dueDate)msg+=` (Due: ${todoFmtYMD(t.dueDate)})`; msg+='\n';});
+  msg+=`\n_${pen.length} task${pen.length!==1?'s':''} pending_`;
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  showToast('Opening WhatsApp ↗');
+}
+
+document.getElementById('addInp').addEventListener('keydown',e=>{if(e.key==='Enter')todoAddTask();});
+document.getElementById('noteInp').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault(); todoAddTask();}});
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('todoView').classList.contains('hidden')) return;
+  if(e.key==='/'&&document.activeElement.tagName!=='INPUT'){e.preventDefault(); document.getElementById('searchInp').focus();}
+  if(e.key==='Escape'){todoCancelEdit(); document.getElementById('searchInp').blur(); document.getElementById('addInp').blur(); todoCloseSheet(); todoCloseExport();}
+});
+
+// ---------- schedule / todos tab switch ----------
+document.getElementById('tabScheduleBtn').onclick = ()=>{
+  document.getElementById('scheduleView').classList.remove('hidden');
+  document.getElementById('todoView').classList.add('hidden');
+  document.getElementById('tabScheduleBtn').classList.add('on');
+  document.getElementById('tabTodoBtn').classList.remove('on');
+  document.getElementById('fabBtn').classList.remove('hidden');
+};
+document.getElementById('tabTodoBtn').onclick = ()=>{
+  document.getElementById('scheduleView').classList.add('hidden');
+  document.getElementById('todoView').classList.remove('hidden');
+  document.getElementById('tabTodoBtn').classList.add('on');
+  document.getElementById('tabScheduleBtn').classList.remove('on');
+  document.getElementById('fabBtn').classList.add('hidden');
+};
+
 // ---------- boot ----------
-updatePomo();
-setInterval(()=>{ if(currentUser){ renderHero(); checkNotifications(); } }, 20000);
-setInterval(()=>{ if(currentUser) renderHero(); }, 1000*60);
-// light polling so a change made on another device shows up here within a minute
-setInterval(()=>{ if(currentUser) loadData(); }, 60000);
+(function boot(){
+  if(checkMaintenance()) return;
+  updatePomo();
+  todoBuildChips(); todoRender();
+  setInterval(()=>{ if(currentUser){ renderHero(); checkNotifications(); } }, 20000);
+  setInterval(()=>{ if(currentUser) renderHero(); }, 1000*60);
+  // light polling so a change made on another device shows up here within a minute
+  setInterval(()=>{ if(currentUser) loadData(); }, 60000);
+})();
 </script>
 </body>
 </html>
