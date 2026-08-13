@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ephemeral — TimeTable</title>
+<title>Ephemeral — Timetable</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -821,11 +821,13 @@ sb.auth.onAuthStateChange((event, session)=>{
     document.getElementById('fabBtn').classList.remove('hidden');
     document.getElementById('userBadge').textContent = currentUser.email;
     loadData();
+    todoLoadTasks();
   } else {
     currentUser = null;
     document.getElementById('authScreen').classList.remove('hidden');
     document.getElementById('appWrap').classList.add('hidden');
     document.getElementById('fabBtn').classList.add('hidden');
+    todoTasks = [];
   }
 });
 
@@ -1149,13 +1151,25 @@ const TODO_PRI={
   medium:{lbl:'Med', c:'#B8894F',bg:'rgba(184,137,79,.14)',ord:1},
   low:   {lbl:'Low', c:'#4B7A74',bg:'rgba(75,122,116,.13)', ord:2},
 };
-let todoTasks=JSON.parse(localStorage.getItem('ephemeral_todos_v1')||'[]');
+let todoTasks=[];
 let todoSelTag='music';
 let todoSelPri='medium';
 let todoFilter='all';
 let todoEditing=null;
 
-function todoSave(){localStorage.setItem('ephemeral_todos_v1',JSON.stringify(todoTasks));}
+function todoRowToTask(r){
+  return { id:r.id, text:r.text, note:r.note||'', tag:r.tag, priority:r.priority,
+    done:r.done, pinned:r.pinned, dueDate:r.due_date||'',
+    createdAt: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
+    completedAt: r.completed_at ? new Date(r.completed_at).getTime() : null };
+}
+async function todoLoadTasks(){
+  if(!currentUser){ todoTasks=[]; todoRender(); return; }
+  const { data, error } = await sb.from('todos').select('*').order('created_at',{ascending:false});
+  if(error){ showToast('Could not load todos: '+error.message); return; }
+  todoTasks = (data||[]).map(todoRowToTask);
+  todoRender();
+}
 const todoTodayISO=()=>new Date().toISOString().slice(0,10);
 function todoFmtYMD(s){return s?s.replace(/-/g,'/'):'';}
 function todoTick(){
@@ -1217,48 +1231,68 @@ function todoParseDueDate(){
   return isNaN(new Date(iso).getTime())?'':iso;
 }
 
-function todoAddTask(){
+async function todoAddTask(){
   const txt=document.getElementById('addInp').value.trim();
   if(!txt){document.getElementById('addInp').focus(); return;}
-  todoTasks.unshift({id:Date.now(), text:txt,
-    note:document.getElementById('noteInp').value.trim(),
-    tag:todoSelTag, priority:todoSelPri, done:false, pinned:false,
-    dueDate:todoParseDueDate(), createdAt:Date.now(), completedAt:null});
+  if(!currentUser){ showToast('Sign in first.'); return; }
+  const note=document.getElementById('noteInp').value.trim();
+  const dueDate=todoParseDueDate();
+  const { data, error } = await sb.from('todos').insert({
+    text:txt, note, tag:todoSelTag, priority:todoSelPri,
+    due_date: dueDate||null, user_id: currentUser.id
+  }).select().single();
+  if(error){ showToast('Could not save: '+error.message); return; }
+  todoTasks.unshift(todoRowToTask(data));
   document.getElementById('addInp').value='';
   document.getElementById('noteInp').value='';
   document.getElementById('dueInp').value='';
-  todoSave(); todoRender(); showToast('Task added ✓');
+  todoRender(); showToast('Task added ✓');
 }
-function todoToggle(id){
+async function todoToggle(id){
   const t=todoTasks.find(t=>t.id===id); if(!t)return;
-  t.done=!t.done; t.completedAt=t.done?Date.now():null;
+  const newDone=!t.done;
+  const { error } = await sb.from('todos').update({ done:newDone, completed_at: newDone?new Date().toISOString():null }).eq('id',id);
+  if(error){ showToast('Could not update: '+error.message); return; }
+  t.done=newDone; t.completedAt=newDone?Date.now():null;
   if(t.done) showToast('Done! 🎉');
-  todoSave(); todoRender();
+  todoRender();
 }
-function todoDel(id){
+async function todoDel(id){
   const el=document.getElementById('ti-'+id);
-  if(el){ el.classList.add('leaving'); setTimeout(()=>{todoTasks=todoTasks.filter(t=>t.id!==id); todoSave(); todoRender();},210); }
-  else{ todoTasks=todoTasks.filter(t=>t.id!==id); todoSave(); todoRender(); }
+  const { error } = await sb.from('todos').delete().eq('id',id);
+  if(error){ showToast('Could not delete: '+error.message); return; }
+  if(el){ el.classList.add('leaving'); setTimeout(()=>{todoTasks=todoTasks.filter(t=>t.id!==id); todoRender();},210); }
+  else{ todoTasks=todoTasks.filter(t=>t.id!==id); todoRender(); }
   showToast('Deleted');
 }
-function todoPin(id){
+async function todoPin(id){
   const t=todoTasks.find(t=>t.id===id); if(!t)return;
-  t.pinned=!t.pinned; showToast(t.pinned?'Pinned 📌':'Unpinned'); todoSave(); todoRender();
+  const newPinned=!t.pinned;
+  const { error } = await sb.from('todos').update({ pinned:newPinned }).eq('id',id);
+  if(error){ showToast('Could not update: '+error.message); return; }
+  t.pinned=newPinned; showToast(t.pinned?'Pinned 📌':'Unpinned'); todoRender();
 }
 function todoStartEdit(id){
   todoEditing=id; todoRender();
   setTimeout(()=>{const i=document.getElementById('ei-'+id); if(i){i.focus(); i.select();}},20);
 }
-function todoSaveEdit(id){
+async function todoSaveEdit(id){
   const inp=document.getElementById('ei-'+id); if(!inp)return;
   const v=inp.value.trim();
-  if(v){const t=todoTasks.find(t=>t.id===id); if(t)t.text=v;}
-  todoEditing=null; todoSave(); todoRender();
+  todoEditing=null;
+  if(!v){ todoRender(); return; }
+  const { error } = await sb.from('todos').update({ text:v }).eq('id',id);
+  if(error){ showToast('Could not update: '+error.message); todoRender(); return; }
+  const t=todoTasks.find(t=>t.id===id); if(t)t.text=v;
+  todoRender();
 }
 function todoCancelEdit(){todoEditing=null; todoRender();}
-function todoClearDone(){
+async function todoClearDone(){
   const c=todoTasks.filter(t=>t.done).length;
-  todoTasks=todoTasks.filter(t=>!t.done); todoSave(); todoRender();
+  if(c===0){ showToast('Nothing to clear.'); return; }
+  const { error } = await sb.from('todos').delete().eq('user_id',currentUser.id).eq('done',true);
+  if(error){ showToast('Could not clear: '+error.message); return; }
+  todoTasks=todoTasks.filter(t=>!t.done); todoRender();
   showToast(`Cleared ${c} task${c!==1?'s':''}`);
 }
 
@@ -1348,7 +1382,7 @@ function todoRender(){
     item.style.animationDelay=(i*.04)+'s';
     item.innerHTML=`
       <div class="chk-col">
-        <div class="chk${task.done?' done':''}" onclick="todoToggle(${task.id})">
+        <div class="chk${task.done?' done':''}" onclick="todoToggle('${task.id}')">
           <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
             <path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -1357,9 +1391,9 @@ function todoRender(){
       <div class="t-body">
         ${isEditing
           ?`<input class="t-edit" id="ei-${task.id}" value="${task.text.replace(/"/g,'&quot;')}"
-              onkeydown="if(event.key==='Enter')todoSaveEdit(${task.id});if(event.key==='Escape')todoCancelEdit();"
-              onblur="todoSaveEdit(${task.id})" />`
-          :`<div class="t-text${task.done?' done':''}" ondblclick="todoStartEdit(${task.id})">${task.text}</div>`}
+              onkeydown="if(event.key==='Enter')todoSaveEdit('${task.id}');if(event.key==='Escape')todoCancelEdit();"
+              onblur="todoSaveEdit('${task.id}')" />`
+          :`<div class="t-text${task.done?' done':''}" ondblclick="todoStartEdit('${task.id}')">${task.text}</div>`}
         ${task.note?`<div class="t-note">${task.note}</div>`:''}
         <div class="t-meta">
           <span class="tbadge" style="background:${tbg};color:${tc}">${tlbl}</span>
@@ -1371,13 +1405,13 @@ function todoRender(){
         </div>
       </div>
       <div class="t-acts">
-        <button class="abt pin" title="${task.pinned?'Unpin':'Pin'}" onclick="todoPin(${task.id})">
+        <button class="abt pin" title="${task.pinned?'Unpin':'Pin'}" onclick="todoPin('${task.id}')">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M5 1h2M6 1v3l2 2H4L6 4V1zM6 7v4M4 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <button class="abt edit" title="Edit" onclick="todoStartEdit(${task.id})">
+        <button class="abt edit" title="Edit" onclick="todoStartEdit('${task.id}')">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 10.5l2.3-.5 6.4-6.4-1.8-1.8-6.4 6.4-.5 2.3z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <button class="abt del" title="Delete" onclick="todoDel(${task.id})">
+        <button class="abt del" title="Delete" onclick="todoDel('${task.id}')">
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </button>
       </div>`;
@@ -1466,7 +1500,7 @@ document.getElementById('tabTodoBtn').onclick = ()=>{
   setInterval(()=>{ if(currentUser){ renderHero(); checkNotifications(); } }, 20000);
   setInterval(()=>{ if(currentUser) renderHero(); }, 1000*60);
   // light polling so a change made on another device shows up here within a minute
-  setInterval(()=>{ if(currentUser) loadData(); }, 60000);
+  setInterval(()=>{ if(currentUser){ loadData(); todoLoadTasks(); } }, 60000);
 })();
 </script>
 </body>
