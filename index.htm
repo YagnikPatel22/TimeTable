@@ -476,6 +476,7 @@
     <div class="topbar-right">
       <span id="userBadge"></span>
       <button class="pill-btn" id="alertBtn">Enable alerts</button>
+      <button class="icon-btn" id="notifSettingsBtn" title="Notification settings">⚙</button>
       <button class="icon-btn" id="themeBtn" title="Toggle theme">☾</button>
       <button class="icon-btn" id="logoutBtn" title="Sign out">⎋</button>
     </div>
@@ -781,7 +782,39 @@
   </div>
   <div class="field"><label>Location</label><input id="fLoc" placeholder="e.g. LT-3 / Lab 2 / Home"></div>
   <div class="field"><label>Notify before (minutes)</label><input id="fNotify" type="number" value="15" min="1" max="120"></div>
+  <div class="field" style="display:flex; align-items:center; gap:8px;">
+    <input type="checkbox" id="fMuted" style="width:auto;">
+    <label style="margin:0; text-transform:none; font-family:'Jost'; font-size:13px; color:var(--fg); cursor:pointer;" for="fMuted">Mute alerts for this entry</label>
+  </div>
+  <div class="field" style="display:flex; align-items:center; gap:8px;">
+    <input type="checkbox" id="fBypassQuiet" style="width:auto;">
+    <label style="margin:0; text-transform:none; font-family:'Jost'; font-size:13px; color:var(--fg); cursor:pointer;" for="fBypassQuiet">Always notify (ignore quiet hours)</label>
+  </div>
   <button class="save-btn" id="saveEntry">Save entry</button>
+</div>
+
+<div class="drawer-overlay" id="notifSettingsOverlay"></div>
+<div class="drawer" id="notifSettingsDrawer">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <p class="section-title" style="margin:0;">Notification settings</p>
+    <button class="icon-btn" id="notifSettingsCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+  </div>
+
+  <p class="section-title" style="font-size:16px;">Quiet hours</p>
+  <p class="streak-caption" style="text-align:left; margin-bottom:14px;">Alerts stay silent during this window, unless an entry is marked "always notify."</p>
+  <div class="row2">
+    <div class="field"><label>Starts</label><input id="quietStart" type="time" value=""></div>
+    <div class="field"><label>Ends</label><input id="quietEnd" type="time" value=""></div>
+  </div>
+
+  <p class="section-title" style="font-size:16px; margin-top:28px;">Morning summary</p>
+  <div class="field" style="display:flex; align-items:center; gap:8px;">
+    <input type="checkbox" id="morningSummaryEnabled" style="width:auto;" checked>
+    <label style="margin:0; text-transform:none; font-family:'Jost'; font-size:13px; color:var(--fg); cursor:pointer;" for="morningSummaryEnabled">Send me a daily summary</label>
+  </div>
+  <div class="field"><label>Time</label><input id="morningSummaryTime" type="time" value="08:00"></div>
+
+  <button class="save-btn" id="saveNotifSettings">Save settings</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -847,6 +880,22 @@
 const SUPABASE_URL = 'https://urbxdarbprlhbebbxxuv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyYnhkYXJicHJsaGJlYmJ4eHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzMzY4NDAsImV4cCI6MjEwMTkxMjg0MH0.-s4SNuzQRLMfyCck8R46FARDcWL6Rg3OXYBy32SUEAU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ---------- service worker (actionable notifications, Snooze button) ----------
+let swReady = null;
+if('serviceWorker' in navigator){
+  swReady = navigator.serviceWorker.register('sw.js').then(reg=>reg).catch(()=>null);
+  navigator.serviceWorker.addEventListener('message', (event)=>{
+    if(event.data?.type==='SNOOZE_ENTRY') notifSnoozeEntry(event.data.entryId);
+  });
+}
+async function notifShow(payload){
+  if(swReady){
+    const reg = await swReady;
+    if(reg){ reg.showNotification ? reg.showNotification(payload.title,payload) : reg.active?.postMessage({type:'SHOW_NOTIFICATION',payload}); return; }
+  }
+  if(Notification.permission==='granted') new Notification(payload.title, { body: payload.body });
+}
 
 // ---------- maintenance mode ----------
 // Flip this to true, edit the message below if you want, then re-upload the file
@@ -933,6 +982,7 @@ sb.auth.onAuthStateChange((event, session)=>{
     document.getElementById('userBadge').textContent = currentUser.email;
     loadData();
     todoLoadTasks();
+    notifLoadSettings();
   } else {
     currentUser = null;
     document.getElementById('authScreen').classList.remove('hidden');
@@ -944,7 +994,7 @@ sb.auth.onAuthStateChange((event, session)=>{
 
 // ---------- data (Supabase) ----------
 function rowToEntry(r){
-  return { id:r.id, title:r.title, type:r.type, day:r.day, start:r.start_time, end:r.end_time, location:r.location||'', notify:r.notify||15 };
+  return { id:r.id, title:r.title, type:r.type, day:r.day, start:r.start_time, end:r.end_time, location:r.location||'', notify:r.notify||15, muted:!!r.muted, bypassQuiet:!!r.bypass_quiet };
 }
 async function loadData(){
   const { data: rows, error } = await sb.from('entries').select('*').order('start_time');
@@ -957,7 +1007,8 @@ async function createEntry(fields){
   const { error } = await sb.from('entries').insert({
     title: fields.title, type: fields.type, day: fields.day,
     start_time: fields.start, end_time: fields.end,
-    location: fields.location, notify: fields.notify, user_id: currentUser.id
+    location: fields.location, notify: fields.notify, user_id: currentUser.id,
+    muted: fields.muted||false, bypass_quiet: fields.bypassQuiet||false
   });
   if(error){ showToast('Could not save: '+error.message); return false; }
   return true;
@@ -966,7 +1017,8 @@ async function updateEntry(id, fields){
   const { error } = await sb.from('entries').update({
     title: fields.title, type: fields.type, day: fields.day,
     start_time: fields.start, end_time: fields.end,
-    location: fields.location, notify: fields.notify
+    location: fields.location, notify: fields.notify,
+    muted: fields.muted||false, bypass_quiet: fields.bypassQuiet||false
   }).eq('id', id);
   if(error){ showToast('Could not update: '+error.message); return false; }
   return true;
@@ -1150,6 +1202,7 @@ function clearFields(){
   document.getElementById('fTitle').value=''; document.getElementById('fType').value='class';
   document.getElementById('fDay').value=String(selectedDay); document.getElementById('fStart').value='09:00';
   document.getElementById('fEnd').value='10:00'; document.getElementById('fLoc').value=''; document.getElementById('fNotify').value='15';
+  document.getElementById('fMuted').checked=false; document.getElementById('fBypassQuiet').checked=false;
 }
 function openNewDrawer(){ editingId = null; drawerTitle.textContent = 'New entry'; saveBtn.textContent = 'Save entry'; clearFields(); openDrawer(); }
 function openEditDrawer(entry){
@@ -1157,7 +1210,10 @@ function openEditDrawer(entry){
   document.getElementById('fTitle').value = entry.title; document.getElementById('fType').value = entry.type;
   document.getElementById('fDay').value = String(entry.day); document.getElementById('fStart').value = entry.start;
   document.getElementById('fEnd').value = entry.end; document.getElementById('fLoc').value = entry.location;
-  document.getElementById('fNotify').value = entry.notify; openDrawer();
+  document.getElementById('fNotify').value = entry.notify;
+  document.getElementById('fMuted').checked = !!entry.muted;
+  document.getElementById('fBypassQuiet').checked = !!entry.bypassQuiet;
+  openDrawer();
 }
 document.getElementById('fabBtn').onclick = openNewDrawer;
 document.getElementById('drawerCloseBtn').onclick = closeDrawer;
@@ -1181,7 +1237,8 @@ document.getElementById('saveEntry').onclick = async ()=>{
   const fields = {
     title, type: document.getElementById('fType').value, day,
     start: document.getElementById('fStart').value, end: document.getElementById('fEnd').value,
-    location: document.getElementById('fLoc').value.trim(), notify: Number(document.getElementById('fNotify').value)||15
+    location: document.getElementById('fLoc').value.trim(), notify: Number(document.getElementById('fNotify').value)||15,
+    muted: document.getElementById('fMuted').checked, bypassQuiet: document.getElementById('fBypassQuiet').checked
   };
   let ok;
   if(editingId){ ok = await updateEntry(editingId, fields); }
@@ -1193,6 +1250,28 @@ document.getElementById('saveEntry').onclick = async ()=>{
 };
 
 document.getElementById('practiceBtn').onclick = ()=>togglePracticedDate(todayString());
+
+// ---------- notification settings drawer ----------
+const notifSettingsOverlay = document.getElementById('notifSettingsOverlay');
+const notifSettingsDrawer = document.getElementById('notifSettingsDrawer');
+document.getElementById('notifSettingsBtn').onclick = async ()=>{
+  notifSettingsOverlay.classList.add('open'); notifSettingsDrawer.classList.add('open');
+  await notifLoadSettings();
+};
+function notifSettingsClose(){ notifSettingsOverlay.classList.remove('open'); notifSettingsDrawer.classList.remove('open'); }
+document.getElementById('notifSettingsCloseBtn').onclick = notifSettingsClose;
+notifSettingsOverlay.onclick = notifSettingsClose;
+document.getElementById('saveNotifSettings').onclick = async ()=>{
+  const quiet_start = document.getElementById('quietStart').value || null;
+  const quiet_end = document.getElementById('quietEnd').value || null;
+  const morning_summary = document.getElementById('morningSummaryEnabled').checked;
+  const morning_summary_time = document.getElementById('morningSummaryTime').value || '08:00';
+  const { error } = await sb.from('notification_settings').update({ quiet_start, quiet_end, morning_summary, morning_summary_time }).eq('user_id',currentUser.id);
+  if(error){ showToast('Could not save: '+error.message); return; }
+  notifSettings = {...notifSettings, quiet_start, quiet_end, morning_summary, morning_summary_time};
+  notifSettingsClose();
+  showToast('Notification settings saved ✓');
+};
 
 // ---------- pomodoro ----------
 let pomoSeconds = 25*60, pomoRunning = false, pomoInterval = null, pomoIsBreak=false;
@@ -1235,18 +1314,77 @@ document.getElementById('alertBtn').onclick = async ()=>{
   if(perm==='granted'){ btn.textContent='Alerts on'; btn.classList.add('on'); showToast('Alerts enabled — keep this tab open.'); }
   else{ showToast('Alerts blocked in browser settings.'); }
 };
+let notifSnoozeUntil = {}; // entryId -> timestamp ms
+let notifSettings = { quiet_start:null, quiet_end:null, morning_summary:true, morning_summary_time:'08:00', last_summary_date:null };
+
+function notifInQuietHours(){
+  if(!notifSettings.quiet_start || !notifSettings.quiet_end) return false;
+  const now = new Date(); const nowMin = now.getHours()*60+now.getMinutes();
+  const [sh,sm] = notifSettings.quiet_start.split(':').map(Number);
+  const [eh,em] = notifSettings.quiet_end.split(':').map(Number);
+  const startMin = sh*60+sm, endMin = eh*60+em;
+  if(startMin===endMin) return false;
+  return startMin<endMin ? (nowMin>=startMin && nowMin<endMin) : (nowMin>=startMin || nowMin<endMin);
+}
+function notifSnoozeEntry(entryId){
+  notifSnoozeUntil[entryId] = Date.now() + 5*60000;
+  showToast("Snoozed — I'll remind you again in 5 min.");
+}
+async function notifLoadSettings(){
+  if(!currentUser) return;
+  const { data } = await sb.from('notification_settings').select('*').eq('user_id',currentUser.id).maybeSingle();
+  if(data) notifSettings = data;
+  else{
+    const { data:created } = await sb.from('notification_settings').insert({ user_id:currentUser.id }).select().single();
+    if(created) notifSettings = created;
+  }
+  document.getElementById('quietStart').value = notifSettings.quiet_start||'';
+  document.getElementById('quietEnd').value = notifSettings.quiet_end||'';
+  document.getElementById('morningSummaryEnabled').checked = notifSettings.morning_summary;
+  document.getElementById('morningSummaryTime').value = notifSettings.morning_summary_time||'08:00';
+}
+async function checkMorningSummary(){
+  if(!currentUser || !notifSettings.morning_summary) return;
+  const now=new Date(); const nowKey=todayString();
+  if(notifSettings.last_summary_date===nowKey) return;
+  const [h,m]=(notifSettings.morning_summary_time||'08:00').split(':').map(Number);
+  const targetMin=h*60+m, nowMin=now.getHours()*60+now.getMinutes();
+  if(nowMin<targetMin || nowMin>targetMin+15) return;
+  const todaysEntries = entries.filter(e=>e.day===now.getDay());
+  let cursor=8*60, gapCount=0;
+  todaysEntries.slice().sort((a,b)=>toMinutes(a.start)-toMinutes(b.start)).forEach(e=>{
+    const s=toMinutes(e.start), en=toMinutes(e.end);
+    if(s>cursor && s-cursor>=45) gapCount++;
+    cursor=Math.max(cursor,en);
+  });
+  if(22*60-cursor>=45) gapCount++;
+  const pendingTodos = typeof todoTasks!=='undefined' ? todoTasks.filter(t=>!t.done).length : 0;
+  notifShow({ title:'Good morning', body:`${todaysEntries.length} classes today, ${gapCount} open blocks, ${pendingTodos} pending todos`, tag:'morning-summary' });
+  notifSettings.last_summary_date=nowKey;
+  await sb.from('notification_settings').update({ last_summary_date:nowKey }).eq('user_id',currentUser.id);
+}
+
 function checkNotifications(){
   const now = new Date(); const today = now.getDay(); const nowMin = now.getHours()*60+now.getMinutes(); const dateKey = todayString();
+  const quiet = notifInQuietHours();
   entries.filter(e=>e.day===today).forEach(e=>{
+    if(e.muted) return;
     const startMin = toMinutes(e.start); const diff = startMin - nowMin; const key = e.id+'_'+dateKey;
-    if(diff>0 && diff<=e.notify && !notifiedToday[key]){
-      notifiedToday[key] = true; beep();
-      if(Notification.permission==='granted'){
-        new Notification(e.title+' in '+diff+' min', { body: (typeLabel(e.type))+(e.location?' · '+e.location:'')+' · starts '+fmtTime(e.start) });
-      }
-      showToast(e.title+' starts in '+diff+' min'+(e.location?' · '+e.location:''));
+    const snoozeReady = notifSnoozeUntil[e.id] && Date.now()>=notifSnoozeUntil[e.id];
+    const dueForFirstAlert = diff>0 && diff<=e.notify && !notifiedToday[key];
+    if(dueForFirstAlert || snoozeReady){
+      if(quiet && !e.bypassQuiet && !snoozeReady) return;
+      notifiedToday[key] = true; delete notifSnoozeUntil[e.id]; beep();
+      notifShow({
+        title: e.title+(diff>0?' in '+diff+' min':' — reminder'),
+        body: (typeLabel(e.type))+(e.location?' · '+e.location:'')+' · starts '+fmtTime(e.start),
+        tag: 'entry-'+e.id, data:{ entryId:e.id },
+        actions: [{ action:'snooze', title:'Snooze 5 min' }]
+      });
+      showToast(e.title+(diff>0?' starts in '+diff+' min':' — reminder')+(e.location?' · '+e.location:''));
     }
   });
+  checkMorningSummary();
 }
 
 
