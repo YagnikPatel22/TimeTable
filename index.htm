@@ -382,6 +382,40 @@
   .todo-scope .exp-desc{display:block;font-size:11px;color:var(--tt3);font-weight:500;}
   .todo-scope .modal-cancel{width:100%;background:none;border:1px solid var(--tb1);border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:var(--tt3);transition:all .18s;}
   .todo-scope .modal-cancel:hover{color:var(--tt2);background:var(--ts1);}
+
+  /* ===================== INSIGHTS & HABITS (additive, reuses existing tokens) ===================== */
+  .insights-drawer{width:min(620px,94vw);}
+  .dash-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:8px;}
+  @media(max-width:520px){.dash-stats{grid-template-columns:repeat(2,1fr);}}
+  .dash-stat{border:1px solid var(--line); padding:14px 12px; border-radius:2px; text-align:center;}
+  .dash-stat-num{font-family:'Cormorant Garamond',serif; font-style:italic; font-size:26px; line-height:1;}
+  .dash-stat-lbl{font-family:'JetBrains Mono',monospace; font-size:9.5px; color:var(--muted); letter-spacing:.04em; text-transform:uppercase; margin-top:6px;}
+
+  .habit-card{border:1px solid var(--line); border-radius:2px; padding:16px; margin-bottom:12px;}
+  .habit-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .habit-name-row{display:flex; align-items:center; gap:8px;}
+  .habit-dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
+  .habit-name{font-family:'Jost'; font-weight:500; font-size:14px;}
+  .habit-meta{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--muted);}
+  .habit-del{background:none; border:none; color:var(--muted); cursor:pointer; font-size:12px; opacity:.6;}
+  .habit-del:hover{color:var(--rust); opacity:1;}
+  .heatmap{display:flex; gap:2px; overflow-x:auto; padding-bottom:4px;}
+  .heat-col{display:flex; flex-direction:column; gap:2px;}
+  .heat-cell{width:10px; height:10px; border-radius:2px; border:1px solid var(--line); cursor:pointer; flex-shrink:0;}
+  .heat-cell.future{opacity:0; pointer-events:none;}
+  .heat-cell:hover{border-color:var(--brass);}
+
+  .insights-add-row{display:flex; gap:8px; margin-top:4px;}
+  .insights-input{flex:1; padding:10px 12px; border:1px solid var(--line); background:var(--paper-dim); color:var(--fg); font-family:'Jost'; font-size:13px; border-radius:2px; outline:none;}
+  .insights-textarea{width:100%; min-height:70px; padding:10px 12px; border:1px solid var(--line); background:var(--paper-dim); color:var(--fg); font-family:'Jost'; font-size:13px; border-radius:2px; outline:none; resize:vertical;}
+
+  .mood-row{display:flex; gap:8px; margin-bottom:14px;}
+  .mood-btn{flex:1; padding:10px 0; border:1px solid var(--line); background:none; border-radius:2px; cursor:pointer; font-size:18px; transition:all .15s ease;}
+  .mood-btn:hover{border-color:var(--brass);}
+  .mood-btn.on{border-color:var(--brass); background:color-mix(in srgb, var(--brass) 14%, transparent);}
+  .mood-trend{display:flex; gap:6px; align-items:center;}
+  .mood-trend-dot{width:11px; height:11px; border-radius:50%; border:1px solid var(--line);}
+  .mood-trend-lbl{font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--muted); text-align:center; margin-top:4px;}
 </style>
 </head>
 <body data-theme="dark">
@@ -464,6 +498,7 @@
       <div class="streak-dots" id="streakDots"></div>
       <p class="streak-caption">tap a day to toggle it</p>
       <button class="pill-btn" id="practiceBtn" style="margin-top:14px; width:100%;">Mark today practiced</button>
+      <button class="pill-btn" id="openInsightsBtn" style="margin-top:8px; width:100%;">Insights & Habits →</button>
     </div>
     <div class="card">
       <h3>Open blocks today</h3>
@@ -588,7 +623,7 @@
     <div id="taskList"></div>
 
     <footer>
-      <span class="ft-left">thanks for using Ephemerals'!</span>
+      <span class="ft-left">Yagnik!</span>
       <div class="ft-right">
         <div class="kbds"><span class="key">⏎</span> add</div>
         <div class="kbds"><span class="key">/</span> search</div>
@@ -729,6 +764,37 @@
   <button class="save-btn" id="saveEntry">Save entry</button>
 </div>
 
+<div class="drawer-overlay" id="insightsOverlay"></div>
+<div class="drawer insights-drawer" id="insightsDrawer">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <p class="section-title" style="margin:0;">Insights & Habits</p>
+    <button class="icon-btn" id="insightsCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+  </div>
+
+  <div class="dash-stats" id="dashStats"></div>
+
+  <p class="section-title" style="margin-top:36px; font-size:18px;">Habits</p>
+  <div id="habitsList"></div>
+  <div class="insights-add-row">
+    <input id="newHabitName" class="insights-input" placeholder="New habit (e.g. Reading, Gym)">
+    <button class="pill-btn" id="addHabitBtn">Add</button>
+  </div>
+
+  <p class="section-title" style="margin-top:36px; font-size:18px;">Mood</p>
+  <div class="mood-row" id="moodRow"></div>
+  <div>
+    <div class="mood-trend" id="moodTrend"></div>
+  </div>
+
+  <p class="section-title" style="margin-top:36px; font-size:18px;">Weekly review</p>
+  <p class="streak-caption" style="text-align:left; margin-bottom:14px;">Week of <span id="reviewWeekLabel"></span></p>
+  <label style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:6px;">What did you finish?</label>
+  <textarea id="reviewFinished" class="insights-textarea" placeholder="…"></textarea>
+  <label style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); display:block; margin:14px 0 6px;">What's rolling over?</label>
+  <textarea id="reviewRolling" class="insights-textarea" placeholder="…"></textarea>
+  <button class="save-btn" id="saveReviewBtn" style="margin-top:14px; margin-bottom:20px;">Save review</button>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -822,6 +888,7 @@ sb.auth.onAuthStateChange((event, session)=>{
     document.getElementById('userBadge').textContent = currentUser.email;
     loadData();
     todoLoadTasks();
+    insightsLoadAll();
   } else {
     currentUser = null;
     document.getElementById('authScreen').classList.remove('hidden');
@@ -1491,6 +1558,248 @@ document.getElementById('tabTodoBtn').onclick = ()=>{
   document.getElementById('tabScheduleBtn').classList.remove('on');
   document.getElementById('fabBtn').classList.add('hidden');
 };
+
+// ---------- insights & habits (additive module, reads existing globals read-only) ----------
+const HABIT_PALETTE = ['#B8894F','#4B7A74','#A64B3B','#BF5AF2','#5AC8FA','#FF6B81'];
+let insightsHabits = [];
+let insightsHabitLogs = {}; // habitId -> Set of 'YYYY-MM-DD'
+let insightsMoodLogs = {};  // 'YYYY-MM-DD' -> mood int
+let insightsFocusMinutesThisWeek = 0;
+let insightsInitialized = false;
+
+function insightsWeekStart(d=new Date()){
+  const offset=(d.getDay()+6)%7;
+  const mon=new Date(d); mon.setDate(d.getDate()-offset);
+  return mon.toISOString().slice(0,10);
+}
+function insightsIsThisWeek(tsOrDateStr){
+  if(!tsOrDateStr) return false;
+  const d = typeof tsOrDateStr==='number' ? new Date(tsOrDateStr) : new Date(tsOrDateStr+'T00:00:00');
+  return insightsWeekStart(d) === insightsWeekStart(new Date());
+}
+
+async function insightsLoadAll(){
+  if(!currentUser) return;
+  const [{data:habitsRows}, {data:logRows}, {data:moodRows}, {data:focusRows}] = await Promise.all([
+    sb.from('habits').select('*').order('created_at'),
+    sb.from('habit_log').select('habit_id,done_on'),
+    sb.from('mood_log').select('logged_on,mood'),
+    sb.from('focus_log').select('logged_on,minutes')
+  ]);
+  insightsHabits = habitsRows||[];
+  insightsHabitLogs = {};
+  (logRows||[]).forEach(r=>{
+    if(!insightsHabitLogs[r.habit_id]) insightsHabitLogs[r.habit_id]=new Set();
+    insightsHabitLogs[r.habit_id].add(r.done_on);
+  });
+  insightsMoodLogs = {};
+  (moodRows||[]).forEach(r=>{ insightsMoodLogs[r.logged_on]=r.mood; });
+  insightsFocusMinutesThisWeek = (focusRows||[]).filter(r=>insightsIsThisWeek(r.logged_on)).reduce((s,r)=>s+r.minutes,0);
+  insightsInitialized = true;
+  if(!document.getElementById('insightsDrawer').classList.contains('hidden') || document.getElementById('insightsDrawer').classList.contains('open')){
+    insightsRenderAll();
+  }
+}
+
+function insightsHeatmapCols(weeks=14){
+  const today=new Date();
+  const thisMonday=new Date(today); thisMonday.setDate(today.getDate()-((today.getDay()+6)%7));
+  const startMonday=new Date(thisMonday); startMonday.setDate(thisMonday.getDate()-7*(weeks-1));
+  const cols=[];
+  for(let w=0; w<weeks; w++){
+    const colStart=new Date(startMonday); colStart.setDate(startMonday.getDate()+7*w);
+    const days=[];
+    for(let d=0; d<7; d++){ const dt=new Date(colStart); dt.setDate(colStart.getDate()+d); days.push(dt.toISOString().slice(0,10)); }
+    cols.push(days);
+  }
+  return cols;
+}
+function insightsHabitStreak(habitId){
+  const set=insightsHabitLogs[habitId]||new Set();
+  let streak=0; let d=new Date();
+  if(!set.has(todayString())) d.setDate(d.getDate()-1);
+  while(set.has(d.toISOString().slice(0,10))){ streak++; d.setDate(d.getDate()-1); }
+  return streak;
+}
+function insightsHabitWeekPct(habitId){
+  const set=insightsHabitLogs[habitId]||new Set();
+  const monday=insightsWeekStart();
+  let count=0;
+  for(let i=0;i<7;i++){ const dt=new Date(monday+'T00:00:00'); dt.setDate(dt.getDate()+i); const key=dt.toISOString().slice(0,10); if(key<=todayString() && set.has(key)) count++; }
+  return Math.round((count/7)*100);
+}
+
+function insightsRenderDashStats(){
+  const weeklyClasses = entries.filter(e=>e.type==='class'||e.type==='lab').length;
+  const tasksDone = todoTasks.filter(t=>t.done && insightsIsThisWeek(t.completedAt)).length;
+  const streakEl = document.getElementById('streakNum');
+  const currentStreak = streakEl ? streakEl.textContent : '0';
+  const focusHrs = (insightsFocusMinutesThisWeek/60).toFixed(1);
+  document.getElementById('dashStats').innerHTML = `
+    <div class="dash-stat"><div class="dash-stat-num">${weeklyClasses}</div><div class="dash-stat-lbl">classes / labs this week</div></div>
+    <div class="dash-stat"><div class="dash-stat-num">${focusHrs}</div><div class="dash-stat-lbl">focus hours this week</div></div>
+    <div class="dash-stat"><div class="dash-stat-num">${tasksDone}</div><div class="dash-stat-lbl">tasks done this week</div></div>
+    <div class="dash-stat"><div class="dash-stat-num">${currentStreak}</div><div class="dash-stat-lbl">productivepractice streak</div></div>`;
+}
+
+function insightsRenderHabits(){
+  const el=document.getElementById('habitsList');
+  el.innerHTML='';
+  if(insightsHabits.length===0){
+    el.innerHTML='<p class="empty-state" style="padding:20px 4px;">No habits yet — add one below.</p>';
+    return;
+  }
+  const cols=insightsHeatmapCols(14);
+  const todayKey=todayString();
+  insightsHabits.forEach(h=>{
+    const set=insightsHabitLogs[h.id]||new Set();
+    const card=document.createElement('div'); card.className='habit-card';
+    let heat='<div class="heatmap">';
+    cols.forEach(week=>{
+      heat+='<div class="heat-col">';
+      week.forEach(dateKey=>{
+        const isFuture=dateKey>todayKey;
+        const filled=set.has(dateKey);
+        heat+=`<div class="heat-cell${isFuture?' future':''}" data-habit="${h.id}" data-date="${dateKey}" style="${filled?`background:${h.color};border-color:${h.color};`:''}" title="${dateKey}"></div>`;
+      });
+      heat+='</div>';
+    });
+    heat+='</div>';
+    card.innerHTML=`
+      <div class="habit-head">
+        <div class="habit-name-row">
+          <span class="habit-dot" style="background:${h.color}"></span>
+          <span class="habit-name">${h.name}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="habit-meta">${insightsHabitStreak(h.id)}d streak · ${insightsHabitWeekPct(h.id)}% this wk</span>
+          <button class="habit-del" data-habit="${h.id}" title="Delete habit">✕</button>
+        </div>
+      </div>
+      ${heat}`;
+    el.appendChild(card);
+  });
+  el.querySelectorAll('.heat-cell:not(.future)').forEach(cell=>{
+    cell.onclick=()=>insightsToggleHabitDay(cell.dataset.habit, cell.dataset.date);
+  });
+  el.querySelectorAll('.habit-del').forEach(btn=>{
+    btn.onclick=()=>insightsDeleteHabit(btn.dataset.habit);
+  });
+}
+
+async function insightsToggleHabitDay(habitId, dateKey){
+  const set=insightsHabitLogs[habitId]||(insightsHabitLogs[habitId]=new Set());
+  const isMarked=set.has(dateKey);
+  if(isMarked){
+    const { error } = await sb.from('habit_log').delete().eq('habit_id',habitId).eq('done_on',dateKey);
+    if(error){ showToast('Could not update: '+error.message); return; }
+    set.delete(dateKey);
+  } else {
+    const { error } = await sb.from('habit_log').upsert({ user_id:currentUser.id, habit_id:habitId, done_on:dateKey }, { onConflict:'habit_id,done_on' });
+    if(error){ showToast('Could not update: '+error.message); return; }
+    set.add(dateKey);
+  }
+  insightsRenderHabits();
+}
+async function insightsAddHabit(){
+  const input=document.getElementById('newHabitName');
+  const name=input.value.trim();
+  if(!name){ input.focus(); return; }
+  const color=HABIT_PALETTE[insightsHabits.length % HABIT_PALETTE.length];
+  const { data, error } = await sb.from('habits').insert({ user_id:currentUser.id, name, color }).select().single();
+  if(error){ showToast('Could not add habit: '+error.message); return; }
+  insightsHabits.push(data);
+  input.value='';
+  insightsRenderHabits();
+  showToast('Habit added ✓');
+}
+async function insightsDeleteHabit(habitId){
+  const { error } = await sb.from('habits').delete().eq('id',habitId);
+  if(error){ showToast('Could not delete: '+error.message); return; }
+  insightsHabits = insightsHabits.filter(h=>h.id!==habitId);
+  delete insightsHabitLogs[habitId];
+  insightsRenderHabits();
+  showToast('Habit removed');
+}
+
+function insightsRenderMood(){
+  const faces=['😞','🙁','😐','🙂','😄'];
+  const todayMood=insightsMoodLogs[todayString()];
+  const row=document.getElementById('moodRow');
+  row.innerHTML='';
+  faces.forEach((face,i)=>{
+    const val=i+1;
+    const btn=document.createElement('button');
+    btn.className='mood-btn'+(todayMood===val?' on':'');
+    btn.textContent=face;
+    btn.onclick=()=>insightsSetMood(val);
+    row.appendChild(btn);
+  });
+  const trendColors=['#A64B3B','#C2795A','#B8894F','#7FA098','#4B7A74'];
+  const trend=document.getElementById('moodTrend');
+  trend.innerHTML='';
+  for(let i=6;i>=0;i--){
+    const dt=new Date(); dt.setDate(dt.getDate()-i);
+    const key=dt.toISOString().slice(0,10);
+    const mood=insightsMoodLogs[key];
+    const wrap=document.createElement('div'); wrap.style.textAlign='center';
+    wrap.innerHTML=`<div class="mood-trend-dot" style="${mood?`background:${trendColors[mood-1]};border-color:${trendColors[mood-1]};`:''}"></div><div class="mood-trend-lbl">${DAY_SHORT[dt.getDay()][0]}</div>`;
+    trend.appendChild(wrap);
+  }
+}
+async function insightsSetMood(val){
+  const key=todayString();
+  const { error } = await sb.from('mood_log').upsert({ user_id:currentUser.id, logged_on:key, mood:val }, { onConflict:'user_id,logged_on' });
+  if(error){ showToast('Could not save: '+error.message); return; }
+  insightsMoodLogs[key]=val;
+  insightsRenderMood();
+}
+
+async function insightsLoadReview(){
+  const weekStart=insightsWeekStart();
+  document.getElementById('reviewWeekLabel').textContent=weekStart.slice(5).replace('-','/');
+  const { data } = await sb.from('weekly_reviews').select('*').eq('week_start',weekStart).maybeSingle();
+  document.getElementById('reviewFinished').value = data?.finished || '';
+  document.getElementById('reviewRolling').value = data?.rolling_over || '';
+}
+async function insightsSaveReview(){
+  const weekStart=insightsWeekStart();
+  const finished=document.getElementById('reviewFinished').value.trim();
+  const rolling=document.getElementById('reviewRolling').value.trim();
+  const { error } = await sb.from('weekly_reviews').upsert({ user_id:currentUser.id, week_start:weekStart, finished, rolling_over:rolling }, { onConflict:'user_id,week_start' });
+  if(error){ showToast('Could not save review: '+error.message); return; }
+  showToast('Weekly review saved ✓');
+}
+
+function insightsRenderAll(){
+  insightsRenderDashStats();
+  insightsRenderHabits();
+  insightsRenderMood();
+  insightsLoadReview();
+}
+
+const insightsOverlay=document.getElementById('insightsOverlay');
+const insightsDrawer=document.getElementById('insightsDrawer');
+document.getElementById('openInsightsBtn').onclick=()=>{
+  insightsOverlay.classList.add('open'); insightsDrawer.classList.add('open');
+  if(insightsInitialized) insightsRenderAll();
+};
+document.getElementById('insightsCloseBtn').onclick=()=>{ insightsOverlay.classList.remove('open'); insightsDrawer.classList.remove('open'); };
+insightsOverlay.onclick=()=>{ insightsOverlay.classList.remove('open'); insightsDrawer.classList.remove('open'); };
+document.getElementById('addHabitBtn').onclick=insightsAddHabit;
+document.getElementById('newHabitName').addEventListener('keydown',e=>{ if(e.key==='Enter') insightsAddHabit(); });
+document.getElementById('saveReviewBtn').onclick=insightsSaveReview;
+
+// passive focus-session tracker — only reads the existing pomoIsBreak global, never modifies it
+let _lastPomoIsBreak=false;
+setInterval(async ()=>{
+  if(!currentUser) return;
+  if(typeof pomoIsBreak!=='undefined' && pomoIsBreak && !_lastPomoIsBreak){
+    await sb.from('focus_log').insert({ user_id:currentUser.id, minutes:25 });
+    insightsFocusMinutesThisWeek += 25;
+  }
+  _lastPomoIsBreak = (typeof pomoIsBreak!=='undefined') ? pomoIsBreak : false;
+}, 2000);
 
 // ---------- boot ----------
 (function boot(){
