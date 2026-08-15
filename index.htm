@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ephemeral — TimeTable</title>
+<title>Ephemeral — Timetable</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -383,39 +383,59 @@
   .todo-scope .modal-cancel{width:100%;background:none;border:1px solid var(--tb1);border-radius:14px;padding:13px;font-size:14px;font-weight:600;color:var(--tt3);transition:all .18s;}
   .todo-scope .modal-cancel:hover{color:var(--tt2);background:var(--ts1);}
 
-  /* ===================== INSIGHTS & HABITS (additive, reuses existing tokens) ===================== */
-  .insights-drawer{width:min(620px,94vw);}
-  .dash-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:8px;}
-  @media(max-width:520px){.dash-stats{grid-template-columns:repeat(2,1fr);}}
-  .dash-stat{border:1px solid var(--line); padding:14px 12px; border-radius:2px; text-align:center;}
-  .dash-stat-num{font-family:'Cormorant Garamond',serif; font-style:italic; font-size:26px; line-height:1;}
-  .dash-stat-lbl{font-family:'JetBrains Mono',monospace; font-size:9.5px; color:var(--muted); letter-spacing:.04em; text-transform:uppercase; margin-top:6px;}
+  /* ProductivePractice habit tracker — additive layer; existing UI remains untouched */
+  .pp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.58);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:100;opacity:0;pointer-events:none;transition:opacity .25s ease;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .pp-overlay.open{opacity:1;pointer-events:auto;}
+  .pp-modal{width:min(920px,100%);max-height:min(90vh,920px);overflow:auto;background:var(--bg);border:1px solid var(--line);padding:30px;border-radius:3px;box-shadow:0 24px 80px rgba(0,0,0,.32);transform:translateY(14px) scale(.985);transition:transform .28s ease;}
+  .pp-overlay.open .pp-modal{transform:none;}
+  .pp-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:24px;}
+  .pp-modal-head h2{font-family:'Cormorant Garamond',serif;font-size:34px;font-style:italic;font-weight:600;margin:2px 0 0;}
+  .pp-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:18px;}
+  .pp-metric{background:var(--bg);padding:16px 15px;min-height:86px;}
+  .pp-metric-value{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:31px;line-height:1;margin-bottom:6px;}
+  .pp-metric-label{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .pp-layout{display:grid;grid-template-columns:1.25fr .75fr;gap:18px;margin-bottom:18px;}
+  .pp-panel{border:1px solid var(--line);padding:20px;background:var(--bg);margin-bottom:18px;}
+  .pp-layout .pp-panel{margin-bottom:0;}
+  .pp-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;}
+  .pp-section-head h3{font-family:'Cormorant Garamond',serif;font-size:23px;font-style:italic;margin:0;font-weight:600;}
+  .pp-kicker{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 4px;}
+  .pp-muted{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);padding-top:5px;text-align:right;}
+  .pp-big{font-family:'Cormorant Garamond',serif;font-size:34px;font-style:italic;font-weight:600;}
+  .pp-habit{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);}
+  .pp-check{width:22px;height:22px;border:1px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;font-size:12px;}
+  .pp-check.done{background:var(--teal);border-color:var(--teal);color:var(--paper);}
+  .pp-habit-name{font-size:14px;font-weight:500;}
+  .pp-habit-meta{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--muted);margin-top:3px;}
+  .pp-habit-actions{display:flex;gap:5px;}
+  .pp-habit-actions button{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);background:none;border:0;cursor:pointer;padding:4px;}
+  .pp-habit-actions button:hover{color:var(--rust);}
+  .pp-tone{width:6px;height:28px;border-radius:4px;display:block;}
+  .pp-tone.teal{background:var(--teal)} .pp-tone.brass{background:var(--brass)} .pp-tone.rust{background:var(--rust)}
+  .pp-add-form{display:grid;grid-template-columns:1fr 100px auto;gap:7px;margin-top:12px;}
+  .pp-add-form input,.pp-add-form select,.pp-review textarea{border:1px solid var(--line);background:var(--paper-dim);color:var(--fg);font-family:'Jost';padding:10px 11px;border-radius:2px;outline:none;}
+  .pp-add-form input:focus,.pp-add-form select:focus,.pp-review textarea:focus{border-color:var(--brass);}
+  .pp-week-bars{height:145px;display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;border-bottom:1px solid var(--line);padding-top:8px;}
+  .pp-bar-col{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px;}
+  .pp-bar{width:min(28px,65%);min-height:2px;background:var(--teal);opacity:.72;border-radius:2px 2px 0 0;transition:height .3s ease;}
+  .pp-bar.today{background:var(--brass);opacity:1;}
+  .pp-bar-pct{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);}
+  .pp-bar-day{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);} .pp-legend{display:flex;gap:15px;margin-top:11px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);}
+  .pp-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;} .pp-teal{background:var(--teal)} .pp-brass{background:var(--brass)}
+  .pp-heatmap-wrap{display:grid;grid-template-columns:34px 1fr;gap:8px;align-items:stretch;}
+  .pp-heat-labels{height:116px;display:flex;flex-direction:column;justify-content:space-between;padding:2px 0;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);}
+  .pp-heatmap{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,14px);grid-auto-columns:14px;gap:4px;overflow:auto;padding:2px 0 6px;}
+  .pp-cell{width:14px;height:14px;border:1px solid var(--line);background:var(--paper-dim);border-radius:2px;cursor:pointer;transition:transform .15s ease;}
+  .pp-cell:hover{transform:scale(1.18);border-color:var(--brass);} .pp-cell.l1{background:color-mix(in srgb,var(--teal) 24%,var(--bg));} .pp-cell.l2{background:color-mix(in srgb,var(--teal) 48%,var(--bg));} .pp-cell.l3{background:color-mix(in srgb,var(--teal) 72%,var(--bg));} .pp-cell.l4{background:var(--teal);}
+  .pp-review-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+  .pp-review label{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;}
+  .pp-review textarea{display:block;width:100%;margin-top:7px;resize:vertical;line-height:1.5;font-family:'Jost';font-size:13px;text-transform:none;letter-spacing:0;}
+  .pp-energy{display:flex;gap:7px;flex-wrap:wrap;}
+  .pp-energy button{font-family:'JetBrains Mono',monospace;font-size:9.5px;padding:8px 11px;border:1px solid var(--line);border-radius:18px;background:none;color:var(--muted);cursor:pointer;transition:.2s;}
+  .pp-energy button:hover,.pp-energy button.active{border-color:var(--brass);color:var(--brass);background:color-mix(in srgb,var(--brass) 10%,transparent);}
+  .pp-suggestion{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:17px;color:var(--muted);margin:14px 0 0;}
+  @media(max-width:760px){.pp-overlay{padding:12px}.pp-modal{padding:20px;max-height:94vh}.pp-metrics{grid-template-columns:repeat(2,1fr)}.pp-layout{grid-template-columns:1fr}.pp-layout .pp-panel{margin-bottom:18px}.pp-add-form{grid-template-columns:1fr 1fr}.pp-add-form button{grid-column:1/-1}.pp-review-grid{grid-template-columns:1fr}.pp-heatmap{grid-auto-columns:12px;grid-template-rows:repeat(7,12px);gap:3px}.pp-cell{width:12px;height:12px}}
 
-  .habit-card{border:1px solid var(--line); border-radius:2px; padding:16px; margin-bottom:12px;}
-  .habit-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
-  .habit-name-row{display:flex; align-items:center; gap:8px;}
-  .habit-dot{width:9px; height:9px; border-radius:50%; flex-shrink:0;}
-  .habit-name{font-family:'Jost'; font-weight:500; font-size:14px;}
-  .habit-meta{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--muted);}
-  .habit-del{background:none; border:none; color:var(--muted); cursor:pointer; font-size:12px; opacity:.6;}
-  .habit-del:hover{color:var(--rust); opacity:1;}
-  .heatmap{display:flex; gap:2px; overflow-x:auto; padding-bottom:4px;}
-  .heat-col{display:flex; flex-direction:column; gap:2px;}
-  .heat-cell{width:10px; height:10px; border-radius:2px; border:1px solid var(--line); cursor:pointer; flex-shrink:0;}
-  .heat-cell.future{opacity:0; pointer-events:none;}
-  .heat-cell:hover{border-color:var(--brass);}
-
-  .insights-add-row{display:flex; gap:8px; margin-top:4px;}
-  .insights-input{flex:1; padding:10px 12px; border:1px solid var(--line); background:var(--paper-dim); color:var(--fg); font-family:'Jost'; font-size:13px; border-radius:2px; outline:none;}
-  .insights-textarea{width:100%; min-height:70px; padding:10px 12px; border:1px solid var(--line); background:var(--paper-dim); color:var(--fg); font-family:'Jost'; font-size:13px; border-radius:2px; outline:none; resize:vertical;}
-
-  .mood-row{display:flex; gap:8px; margin-bottom:14px;}
-  .mood-btn{flex:1; padding:10px 0; border:1px solid var(--line); background:none; border-radius:2px; cursor:pointer; font-size:18px; transition:all .15s ease;}
-  .mood-btn:hover{border-color:var(--brass);}
-  .mood-btn.on{border-color:var(--brass); background:color-mix(in srgb, var(--brass) 14%, transparent);}
-  .mood-trend{display:flex; gap:6px; align-items:center;}
-  .mood-trend-dot{width:11px; height:11px; border-radius:50%; border:1px solid var(--line);}
-  .mood-trend-lbl{font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--muted); text-align:center; margin-top:4px;}
 </style>
 </head>
 <body data-theme="dark">
@@ -498,7 +518,7 @@
       <div class="streak-dots" id="streakDots"></div>
       <p class="streak-caption">tap a day to toggle it</p>
       <button class="pill-btn" id="practiceBtn" style="margin-top:14px; width:100%;">Mark today practiced</button>
-      <button class="pill-btn" id="openInsightsBtn" style="margin-top:8px; width:100%;">Insights & Habits →</button>
+      <button class="pill-btn" id="habitTrackerBtn" style="margin-top:14px; width:100%;">Open habit tracker · analytics</button>
     </div>
     <div class="card">
       <h3>Open blocks today</h3>
@@ -623,7 +643,7 @@
     <div id="taskList"></div>
 
     <footer>
-      <span class="ft-left">thanks for using Ephemerals' <3</span>
+      <span class="ft-left">Yagnik!</span>
       <div class="ft-right">
         <div class="kbds"><span class="key">⏎</span> add</div>
         <div class="kbds"><span class="key">/</span> search</div>
@@ -759,43 +779,67 @@
     <div class="field"><label>Start (24h)</label><input id="fStart" type="time" value="09:00"></div>
     <div class="field"><label>End (24h)</label><input id="fEnd" type="time" value="10:00"></div>
   </div>
-  <div class="field"><label>Location</label><input id="fLoc" placeholder="e.g. ClassRoom / LT / Lab / Home"></div>
+  <div class="field"><label>Location</label><input id="fLoc" placeholder="e.g. LT-3 / Lab 2 / Home"></div>
   <div class="field"><label>Notify before (minutes)</label><input id="fNotify" type="number" value="15" min="1" max="120"></div>
   <button class="save-btn" id="saveEntry">Save entry</button>
 </div>
 
-<div class="drawer-overlay" id="insightsOverlay"></div>
-<div class="drawer insights-drawer" id="insightsDrawer">
-  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
-    <p class="section-title" style="margin:0;">Insights & Habits</p>
-    <button class="icon-btn" id="insightsCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+<div class="toast" id="toast"></div>
+<!-- PRODUCTIVEPRACTICE HABIT TRACKER -->
+<div class="pp-overlay" id="ppOverlay">
+  <div class="pp-modal" role="dialog" aria-modal="true" aria-labelledby="ppTitle">
+    <div class="pp-modal-head">
+      <div>
+        <p class="eyebrow">ProductivePractice / Rhythm</p>
+        <h2 id="ppTitle">Habits &amp; analytics</h2>
+      </div>
+      <button class="icon-btn" id="ppClose" title="Close">✕</button>
+    </div>
+
+    <div class="pp-metrics" id="ppMetrics"></div>
+
+    <div class="pp-layout">
+      <section class="pp-panel pp-habits-panel">
+        <div class="pp-section-head"><div><p class="pp-kicker">Daily rhythm</p><h3>Habits</h3></div><button class="pill-btn" id="ppAddHabit">+ Add habit</button></div>
+        <div id="ppHabitList"></div>
+        <div class="pp-add-form hidden" id="ppHabitForm">
+          <input id="ppHabitName" placeholder="e.g. DSA practice" maxlength="40">
+          <select id="ppHabitTone"><option value="teal">Teal</option><option value="brass">Brass</option><option value="rust">Rust</option></select>
+          <button class="pill-btn on" id="ppSaveHabit">Save habit</button>
+        </div>
+      </section>
+
+      <section class="pp-panel">
+        <div class="pp-section-head"><div><p class="pp-kicker">Consistency</p><h3>Weekly completion</h3></div><strong class="pp-big" id="ppWeekPct">0%</strong></div>
+        <div class="pp-week-bars" id="ppWeekBars"></div>
+        <div class="pp-legend"><span><i class="pp-dot pp-teal"></i>completed</span><span><i class="pp-dot pp-brass"></i>today</span></div>
+      </section>
+    </div>
+
+    <section class="pp-panel pp-heat-panel">
+      <div class="pp-section-head"><div><p class="pp-kicker">Last 12 weeks</p><h3>Habit heat map</h3></div><span class="pp-muted" id="ppHeatSummary">—</span></div>
+      <div class="pp-heatmap-wrap"><div class="pp-heat-labels"><span>Mon</span><span>Wed</span><span>Fri</span></div><div class="pp-heatmap" id="ppHeatmap"></div></div>
+    </section>
+
+    <section class="pp-panel pp-review">
+      <div class="pp-section-head"><div><p class="pp-kicker">Weekly review</p><h3>Keep the momentum</h3></div><span class="pp-muted">Sunday reset</span></div>
+      <div class="pp-review-grid">
+        <label><span>What did you finish?</span><textarea id="ppFinished" rows="3" placeholder="Wins, projects, habits…"></textarea></label>
+        <label><span>What’s rolling over?</span><textarea id="ppRolling" rows="3" placeholder="Carry these into next week…"></textarea></label>
+      </div>
+      <button class="pill-btn on" id="ppSaveReview">Save weekly review</button>
+    </section>
+
+    <section class="pp-panel pp-mood">
+      <div class="pp-section-head"><div><p class="pp-kicker">Optional check-in</p><h3>How is your energy today?</h3></div><span class="pp-muted">Used only for task suggestions</span></div>
+      <div class="pp-energy" id="ppEnergy">
+        <button data-energy="1">Low</button><button data-energy="2">Steady</button><button data-energy="3">Good</button><button data-energy="4">High</button><button data-energy="5">Excellent</button>
+      </div>
+      <p class="pp-suggestion" id="ppSuggestion">No check-in yet. Your plan stays unchanged.</p>
+    </section>
   </div>
-
-  <div class="dash-stats" id="dashStats"></div>
-
-  <p class="section-title" style="margin-top:36px; font-size:18px;">Habits</p>
-  <div id="habitsList"></div>
-  <div class="insights-add-row">
-    <input id="newHabitName" class="insights-input" placeholder="New habit (e.g. Reading, Gym)">
-    <button class="pill-btn" id="addHabitBtn">Add</button>
-  </div>
-
-  <p class="section-title" style="margin-top:36px; font-size:18px;">Mood</p>
-  <div class="mood-row" id="moodRow"></div>
-  <div>
-    <div class="mood-trend" id="moodTrend"></div>
-  </div>
-
-  <p class="section-title" style="margin-top:36px; font-size:18px;">Weekly review</p>
-  <p class="streak-caption" style="text-align:left; margin-bottom:14px;">Week of <span id="reviewWeekLabel"></span></p>
-  <label style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:6px;">What did you finish?</label>
-  <textarea id="reviewFinished" class="insights-textarea" placeholder="…"></textarea>
-  <label style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); display:block; margin:14px 0 6px;">What's rolling over?</label>
-  <textarea id="reviewRolling" class="insights-textarea" placeholder="…"></textarea>
-  <button class="save-btn" id="saveReviewBtn" style="margin-top:14px; margin-bottom:20px;">Save review</button>
 </div>
 
-<div class="toast" id="toast"></div>
 
 <script>
 // ---------- Supabase ----------
@@ -888,7 +932,6 @@ sb.auth.onAuthStateChange((event, session)=>{
     document.getElementById('userBadge').textContent = currentUser.email;
     loadData();
     todoLoadTasks();
-    insightsLoadAll();
   } else {
     currentUser = null;
     document.getElementById('authScreen').classList.remove('hidden');
@@ -1205,6 +1248,174 @@ function checkNotifications(){
   });
 }
 
+
+
+// ---------- ProductivePractice habit analytics (additive feature, Supabase-backed) ----------
+const ppDefaultHabits=[
+  {name:'ProductivePractice',tone:'teal'},
+  {name:'Deep focus',tone:'brass'},
+  {name:'Move / reset',tone:'rust'}
+];
+let ppHabits=[];          // [{id,name,tone}]
+let ppLogs={};             // { 'YYYY-MM-DD': { habitId: true } }
+let ppEnergyToday=null;
+let ppReviewText={finished:'',rolling:''};
+let ppFocusMinutesThisWeek=0;
+let ppLoaded=false;
+
+function ppIsBuiltIn(h){ return h.name==='ProductivePractice' || h.name==='Attend classes'; }
+function ppDate(d=new Date()){return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);}
+function ppAddDays(date,n){const d=new Date(date+'T12:00:00');d.setDate(d.getDate()+n);return ppDate(d);}
+function ppWeekStart(date=new Date()){const d=new Date(date);const off=(d.getDay()+6)%7;d.setDate(d.getDate()-off);return ppDate(d);}
+function ppDayLabel(key){return new Date(key+'T12:00:00').toLocaleDateString('en-IN',{weekday:'short'});}
+function ppDoneCount(key){return ppHabits.reduce((n,h)=>n+(ppLogs[key]?.[h.id]?1:0),0);}
+function ppWeeklyStats(){const start=ppWeekStart();return Array.from({length:7},(_,i)=>{const key=ppAddDays(start,i);const total=ppHabits.length;return {key,done:ppDoneCount(key),pct:total?Math.round(ppDoneCount(key)/total*100):0};});}
+function ppClassAttendance(){
+  const attendHabit=ppHabits.find(h=>h.name==='Attend classes');
+  const start=ppWeekStart();let scheduledDays=0,doneDays=0;
+  for(let i=0;i<7;i++){const key=ppAddDays(start,i);const dow=(i+1)%7;if(entries.some(e=>e.day===dow&&e.type==='class')){scheduledDays++;if(attendHabit&&ppLogs[key]?.[attendHabit.id])doneDays++;}}
+  return scheduledDays?Math.min(100,Math.round(doneDays/scheduledDays*100))+'%':'0%';
+}
+function ppFocusHours(){ return (ppFocusMinutesThisWeek/60).toFixed(1)+'h'; }
+function ppTaskCount(){
+  if(typeof todoTasks==='undefined') return '—';
+  const start=ppWeekStart(),end=ppAddDays(start,6);
+  return todoTasks.filter(t=>t.done&&t.completedAt&&ppDate(new Date(t.completedAt))>=start&&ppDate(new Date(t.completedAt))<=end).length;
+}
+
+async function ppLoadAll(){
+  if(!currentUser) return;
+  const [{data:habitRows},{data:logRows}] = await Promise.all([
+    sb.from('habits').select('*').order('created_at'),
+    sb.from('habit_log').select('habit_id,done_on')
+  ]);
+  ppHabits = habitRows||[];
+  if(ppHabits.length===0){
+    const { data:seeded } = await sb.from('habits').insert(
+      ppDefaultHabits.map(h=>({ user_id:currentUser.id, name:h.name, color:h.tone }))
+    ).select();
+    ppHabits = seeded||[];
+  }
+  ppHabits = ppHabits.map(h=>({ id:h.id, name:h.name, tone:h.color }));
+  ppLogs = {};
+  (logRows||[]).forEach(r=>{ if(!ppLogs[r.done_on]) ppLogs[r.done_on]={}; ppLogs[r.done_on][r.habit_id]=true; });
+
+  const attendHabitExists = ppHabits.some(h=>h.name==='Attend classes');
+  if(!attendHabitExists && entries.some(e=>e.type==='class')){
+    const { data } = await sb.from('habits').insert({ user_id:currentUser.id, name:'Attend classes', color:'brass' }).select().single();
+    if(data) ppHabits.splice(1,0,{ id:data.id, name:data.name, tone:data.color });
+  }
+
+  const weekStart=ppWeekStart(), weekEnd=ppAddDays(weekStart,6), today=ppDate();
+  const [{data:moodRow},{data:reviewRow},{data:focusRows}] = await Promise.all([
+    sb.from('mood_log').select('mood').eq('logged_on',today).maybeSingle(),
+    sb.from('weekly_reviews').select('finished,rolling_over').eq('week_start',weekStart).maybeSingle(),
+    sb.from('focus_log').select('logged_on,minutes')
+  ]);
+  ppEnergyToday = moodRow?.mood || null;
+  ppReviewText = { finished:reviewRow?.finished||'', rolling:reviewRow?.rolling_over||'' };
+  ppFocusMinutesThisWeek = (focusRows||[]).filter(r=>r.logged_on>=weekStart&&r.logged_on<=weekEnd).reduce((s,r)=>s+r.minutes,0);
+  ppLoaded=true;
+}
+
+async function ppOpen(){
+  document.getElementById('ppOverlay').classList.add('open');
+  await ppLoadAll();
+  ppRender();
+}
+function ppClose(){document.getElementById('ppOverlay').classList.remove('open');}
+
+async function ppToggle(habitId,key){
+  if(key>ppDate())return;
+  const isMarked = !!ppLogs[key]?.[habitId];
+  if(isMarked){
+    const { error } = await sb.from('habit_log').delete().eq('habit_id',habitId).eq('done_on',key);
+    if(error){ showToast('Could not update: '+error.message); return; }
+    delete ppLogs[key][habitId];
+  } else {
+    const { error } = await sb.from('habit_log').upsert({ user_id:currentUser.id, habit_id:habitId, done_on:key }, { onConflict:'habit_id,done_on' });
+    if(error){ showToast('Could not update: '+error.message); return; }
+    if(!ppLogs[key]) ppLogs[key]={};
+    ppLogs[key][habitId]=true;
+  }
+  ppRender();
+}
+async function ppDeleteHabit(id){
+  const h=ppHabits.find(x=>x.id===id); if(!h||ppIsBuiltIn(h))return;
+  if(!confirm('Remove '+h.name+' from your tracker?'))return;
+  const { error } = await sb.from('habits').delete().eq('id',id);
+  if(error){ showToast('Could not delete: '+error.message); return; }
+  ppHabits=ppHabits.filter(x=>x.id!==id);
+  Object.keys(ppLogs).forEach(k=>delete ppLogs[k][id]);
+  ppRender();
+}
+function ppRenderMetrics(){
+  const wk=ppWeeklyStats();const total=wk.reduce((a,x)=>a+x.done,0);const max=wk.length*ppHabits.length;
+  document.getElementById('ppMetrics').innerHTML=`<div class="pp-metric"><div class="pp-metric-value">${ppClassAttendance()}</div><div class="pp-metric-label">weekly class attendance proxy</div></div><div class="pp-metric"><div class="pp-metric-value">${ppFocusHours()}</div><div class="pp-metric-label">focus hours</div></div><div class="pp-metric"><div class="pp-metric-value">${ppTaskCount()}</div><div class="pp-metric-label">tasks completed</div></div><div class="pp-metric"><div class="pp-metric-value">${document.getElementById('streakNum').textContent||0}</div><div class="pp-metric-label">current practice streak</div></div>`;
+  const pct=max?Math.round(total/max*100):0;document.getElementById('ppWeekPct').textContent=pct+'%';
+}
+function ppRenderHabits(){
+  const list=document.getElementById('ppHabitList');const today=ppDate();list.innerHTML='';
+  ppHabits.forEach(h=>{const done=!!ppLogs[today]?.[h.id];let count=0;for(let i=0;i<7;i++)count+=ppLogs[ppAddDays(ppWeekStart(),i)]?.[h.id]?1:0;
+    const builtIn=ppIsBuiltIn(h);
+    const row=document.createElement('div');row.className='pp-habit';row.innerHTML=`<span class="pp-tone ${h.tone}"></span><div><div class="pp-habit-name">${h.name}</div><div class="pp-habit-meta">${count}/7 this week${done?' · done today':''}</div></div><div class="pp-habit-actions"><button class="pp-check ${done?'done':''}" title="Toggle today">${done?'✓':''}</button>${builtIn?'':`<button class="pp-remove">Remove</button>`}</div>`;
+    row.querySelector('.pp-check').onclick=()=>ppToggle(h.id,today);if(!builtIn)row.querySelector('.pp-remove').onclick=()=>ppDeleteHabit(h.id);list.appendChild(row);});
+}
+function ppRenderBars(){const el=document.getElementById('ppWeekBars');el.innerHTML='';ppWeeklyStats().forEach(x=>{const col=document.createElement('div');col.className='pp-bar-col';col.innerHTML=`<span class="pp-bar-pct">${x.pct}%</span><div class="pp-bar${x.key===ppDate()?' today':''}" style="height:${Math.max(2,x.pct)}%"></div><span class="pp-bar-day">${ppDayLabel(x.key).slice(0,1)}</span>`;el.appendChild(col);});}
+function ppRenderHeat(){
+  const el=document.getElementById('ppHeatmap');el.innerHTML='';const end=ppDate();const start=ppAddDays(end,-83);let active=0;
+  for(let i=0;i<84;i++){const key=ppAddDays(start,i);const count=ppDoneCount(key);const max=ppHabits.length;const lvl=max?Math.min(4,Math.ceil(count/max*4)):0;if(count)active++;const c=document.createElement('div');c.className='pp-cell'+(lvl?' l'+lvl:'');c.title=`${key} · ${count}/${max} habits`;c.onclick=()=>{showToast(key+' · '+count+'/'+max+' habits done');};el.appendChild(c);}
+  document.getElementById('ppHeatSummary').textContent=active+' active days';
+}
+function ppRenderReview(){
+  document.getElementById('ppFinished').value=ppReviewText.finished;
+  document.getElementById('ppRolling').value=ppReviewText.rolling;
+  document.querySelectorAll('#ppEnergy button').forEach(b=>b.classList.toggle('active',Number(b.dataset.energy)===Number(ppEnergyToday)));
+  const suggestions={1:'Low energy: keep today light — choose one tiny win and a simple admin task.',2:'Steady energy: keep the essentials, but leave room between demanding tasks.',3:'Good energy: a normal plan works well today.',4:'High energy: this is a good day for your hardest focus block.',5:'Excellent energy: protect a deep-work block and use the momentum.'};
+  document.getElementById('ppSuggestion').textContent=ppEnergyToday?suggestions[ppEnergyToday]:'No check-in yet. Your plan stays unchanged.';
+}
+function ppRender(){ppRenderMetrics();ppRenderHabits();ppRenderBars();ppRenderHeat();ppRenderReview();}
+document.getElementById('habitTrackerBtn').onclick=ppOpen;document.getElementById('ppClose').onclick=ppClose;document.getElementById('ppOverlay').onclick=e=>{if(e.target.id==='ppOverlay')ppClose();};
+document.getElementById('ppAddHabit').onclick=()=>document.getElementById('ppHabitForm').classList.toggle('hidden');
+document.getElementById('ppSaveHabit').onclick=async ()=>{
+  const name=document.getElementById('ppHabitName').value.trim();if(!name)return;
+  const tone=document.getElementById('ppHabitTone').value;
+  const { data, error } = await sb.from('habits').insert({ user_id:currentUser.id, name, color:tone }).select().single();
+  if(error){ showToast('Could not add habit: '+error.message); return; }
+  ppHabits.push({ id:data.id, name:data.name, tone:data.color });
+  document.getElementById('ppHabitName').value='';
+  document.getElementById('ppHabitForm').classList.add('hidden');
+  ppRender();showToast('Habit added ✓');
+};
+document.getElementById('ppSaveReview').onclick=async ()=>{
+  const weekStart=ppWeekStart();
+  const finished=document.getElementById('ppFinished').value.trim();
+  const rolling=document.getElementById('ppRolling').value.trim();
+  const { error } = await sb.from('weekly_reviews').upsert({ user_id:currentUser.id, week_start:weekStart, finished, rolling_over:rolling }, { onConflict:'user_id,week_start' });
+  if(error){ showToast('Could not save: '+error.message); return; }
+  ppReviewText={finished,rolling};
+  showToast('Weekly review saved ✓');
+};
+document.querySelectorAll('#ppEnergy button').forEach(b=>b.onclick=async ()=>{
+  const val=Number(b.dataset.energy);
+  const { error } = await sb.from('mood_log').upsert({ user_id:currentUser.id, logged_on:ppDate(), mood:val }, { onConflict:'user_id,logged_on' });
+  if(error){ showToast('Could not save: '+error.message); return; }
+  ppEnergyToday=val;
+  ppRenderReview();showToast('Energy check-in saved');
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')ppClose();});
+
+// passive focus-session tracker — only reads the existing pomoIsBreak global, never modifies your Pomodoro code
+let _ppLastPomoIsBreak=false;
+setInterval(async ()=>{
+  if(!currentUser) return;
+  if(typeof pomoIsBreak!=='undefined' && pomoIsBreak && !_ppLastPomoIsBreak){
+    const { error } = await sb.from('focus_log').insert({ user_id:currentUser.id, minutes:25 });
+    if(!error) ppFocusMinutesThisWeek += 25;
+  }
+  _ppLastPomoIsBreak = (typeof pomoIsBreak!=='undefined') ? pomoIsBreak : false;
+}, 2000);
+
 // ---------- todos ----------
 const TODO_TAGS={
   music:    {lbl:'Music Class',c:'#B8894F',bg:'rgba(184,137,79,.15)'},
@@ -1500,35 +1711,35 @@ function todoDoExport(fmt){
   const d=todoTodayISO().replace(/-/g,'/');
   const pen=todoTasks.filter(t=>!t.done), don=todoTasks.filter(t=>t.done);
   if(fmt==='txt'){
-    let out=`Ephemerals' Todos — ${d}\n${'─'.repeat(36)}\n\nPENDING (${pen.length})\n`;
+    let out=`YAGNIK'S TODOS — ${d}\n${'─'.repeat(36)}\n\nPENDING (${pen.length})\n`;
     pen.forEach((t,i)=>{out+=`\n${i+1}. [${(TODO_PRI[t.priority]||TODO_PRI.medium).lbl.toUpperCase()}] ${t.text}`; if(t.note)out+=`\n   Note: ${t.note}`; if(t.dueDate)out+=`\n   Due:  ${todoFmtYMD(t.dueDate)}`; out+=`\n   Tag:  ${(TODO_TAGS[t.tag]||{lbl:t.tag}).lbl}`;});
     out+=`\n\n${'─'.repeat(36)}\nDONE (${don.length})\n`;
     don.forEach((t,i)=>out+=`\n${i+1}. ✓ ${t.text}`);
-    todoDl(out,`ephemerals'-todos-${todoTodayISO()}.txt`,'text/plain'); showToast('Exported as .TXT ↓');
+    todoDl(out,`yagnik-todos-${todoTodayISO()}.txt`,'text/plain'); showToast('Exported as .TXT ↓');
   }else if(fmt==='csv'){
     const rows=[['Status','Task','Tag','Priority','Due Date','Note','Added']];
     todoTasks.forEach(t=>rows.push([t.done?'Done':'Pending',`"${t.text.replace(/"/g,'""')}"`,
       (TODO_TAGS[t.tag]||{lbl:t.tag}).lbl,(TODO_PRI[t.priority]||TODO_PRI.medium).lbl,
       todoFmtYMD(t.dueDate)||'',`"${(t.note||'').replace(/"/g,'""')}"`,todoFmtDate(t.createdAt)]));
-    todoDl(rows.map(r=>r.join(',')).join('\n'),`ephemerals-todos-${todoTodayISO()}.csv`,'text/csv'); showToast('Exported as .CSV ↓');
+    todoDl(rows.map(r=>r.join(',')).join('\n'),`yagnik-todos-${todoTodayISO()}.csv`,'text/csv'); showToast('Exported as .CSV ↓');
   }else if(fmt==='md'){
-    const lines=[`# Ephemerals' Todos — ${d}`,`*Exported from Ephemeral*`,''];
+    const lines=[`# Yagnik's Todos — ${d}`,`*Exported from Ephemeral*`,''];
     if(pen.length){lines.push(`## Pending (${pen.length})`,''); pen.forEach(t=>{lines.push(`- [ ] **${t.text}**`); if(t.note)lines.push(`  > ${t.note}`); if(t.dueDate)lines.push(`  Due: \`${todoFmtYMD(t.dueDate)}\``); lines.push(`  \`${(TODO_TAGS[t.tag]||{lbl:t.tag}).lbl}\` · ${(TODO_PRI[t.priority]||TODO_PRI.medium).lbl} priority`,'');});}
     if(don.length){lines.push(`## Done (${don.length})`,''); don.forEach(t=>lines.push(`- [x] ~~${t.text}~~`));}
-    todoDl(lines.join('\n'),`ephemerals'-todos-${todoTodayISO()}.md`,'text/markdown'); showToast('Exported as .MD ↓');
+    todoDl(lines.join('\n'),`yagnik-todos-${todoTodayISO()}.md`,'text/markdown'); showToast('Exported as .MD ↓');
   }else if(fmt==='pdf'){
     const w=window.open('','_blank');
     const pen2=todoTasks.filter(t=>!t.done), don2=todoTasks.filter(t=>t.done);
     const tr=t=>`<tr><td>${t.text}</td><td>${(TODO_TAGS[t.tag]||{lbl:t.tag}).lbl}</td><td>${(TODO_PRI[t.priority]||TODO_PRI.medium).lbl}</td><td>${todoFmtYMD(t.dueDate)||'—'}</td><td>${t.note||'—'}</td></tr>`;
     const tr2=t=>`<tr style="color:#999;text-decoration:line-through"><td>${t.text}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>`;
-    w.document.write(`<!DOCTYPE html><html><head><title>Ephemerals' Todos</title><style>*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,sans-serif;}body{padding:40px;color:#111;font-size:13px;}h1{font-size:28px;font-weight:800;letter-spacing:-.04em;margin-bottom:4px;}.sub{color:#888;font-size:11px;margin-bottom:28px;}h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#555;margin:24px 0 10px;}table{width:100%;border-collapse:collapse;}th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;padding:6px 10px;border-bottom:1px solid #eee;}td{padding:9px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;}@media print{body{padding:20px;}}</style></head><body><h1>Ephemerals'</h1><div class="sub">Exported ${d} · ${todoTasks.length} tasks total</div><h2>Pending (${pen2.length})</h2><table><thead><tr><th>Task</th><th>Tag</th><th>Priority</th><th>Due</th><th>Note</th></tr></thead><tbody>${pen2.map(tr).join('')}</tbody></table>${don2.length?`<h2>Done (${don2.length})</h2><table><thead><tr><th>Task</th><th>Tag</th><th>Priority</th><th>Due</th><th>Note</th></tr></thead><tbody>${don2.map(tr2).join('')}</tbody></table>`:''}</body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title>Yagnik's Todos</title><style>*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,sans-serif;}body{padding:40px;color:#111;font-size:13px;}h1{font-size:28px;font-weight:800;letter-spacing:-.04em;margin-bottom:4px;}.sub{color:#888;font-size:11px;margin-bottom:28px;}h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#555;margin:24px 0 10px;}table{width:100%;border-collapse:collapse;}th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;padding:6px 10px;border-bottom:1px solid #eee;}td{padding:9px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;}@media print{body{padding:20px;}}</style></head><body><h1>Yagnik's Todos</h1><div class="sub">Exported ${d} · ${todoTasks.length} tasks total</div><h2>Pending (${pen2.length})</h2><table><thead><tr><th>Task</th><th>Tag</th><th>Priority</th><th>Due</th><th>Note</th></tr></thead><tbody>${pen2.map(tr).join('')}</tbody></table>${don2.length?`<h2>Done (${don2.length})</h2><table><thead><tr><th>Task</th><th>Tag</th><th>Priority</th><th>Due</th><th>Note</th></tr></thead><tbody>${don2.map(tr2).join('')}</tbody></table>`:''}</body></html>`);
     w.document.close(); w.focus(); w.print(); showToast('PDF print dialog opened ↓');
   }
 }
 function todoShareWhatsApp(){
   const pen=todoTasks.filter(t=>!t.done);
   if(!pen.length){showToast('No pending tasks to share!'); return;}
-  let msg=`*Ephemerals' Todos* 📋\n_${todoTodayISO().replace(/-/g,'/')}_\n\n`;
+  let msg=`*Yagnik's Todos* 📋\n_${todoTodayISO().replace(/-/g,'/')}_\n\n`;
   pen.forEach((t,i)=>{msg+=`${i+1}. ⏳ *${t.text}*`; if(t.dueDate)msg+=` (Due: ${todoFmtYMD(t.dueDate)})`; msg+='\n';});
   msg+=`\n_${pen.length} task${pen.length!==1?'s':''} pending_`;
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
@@ -1558,248 +1769,6 @@ document.getElementById('tabTodoBtn').onclick = ()=>{
   document.getElementById('tabScheduleBtn').classList.remove('on');
   document.getElementById('fabBtn').classList.add('hidden');
 };
-
-// ---------- insights & habits (additive module, reads existing globals read-only) ----------
-const HABIT_PALETTE = ['#B8894F','#4B7A74','#A64B3B','#BF5AF2','#5AC8FA','#FF6B81'];
-let insightsHabits = [];
-let insightsHabitLogs = {}; // habitId -> Set of 'YYYY-MM-DD'
-let insightsMoodLogs = {};  // 'YYYY-MM-DD' -> mood int
-let insightsFocusMinutesThisWeek = 0;
-let insightsInitialized = false;
-
-function insightsWeekStart(d=new Date()){
-  const offset=(d.getDay()+6)%7;
-  const mon=new Date(d); mon.setDate(d.getDate()-offset);
-  return mon.toISOString().slice(0,10);
-}
-function insightsIsThisWeek(tsOrDateStr){
-  if(!tsOrDateStr) return false;
-  const d = typeof tsOrDateStr==='number' ? new Date(tsOrDateStr) : new Date(tsOrDateStr+'T00:00:00');
-  return insightsWeekStart(d) === insightsWeekStart(new Date());
-}
-
-async function insightsLoadAll(){
-  if(!currentUser) return;
-  const [{data:habitsRows}, {data:logRows}, {data:moodRows}, {data:focusRows}] = await Promise.all([
-    sb.from('habits').select('*').order('created_at'),
-    sb.from('habit_log').select('habit_id,done_on'),
-    sb.from('mood_log').select('logged_on,mood'),
-    sb.from('focus_log').select('logged_on,minutes')
-  ]);
-  insightsHabits = habitsRows||[];
-  insightsHabitLogs = {};
-  (logRows||[]).forEach(r=>{
-    if(!insightsHabitLogs[r.habit_id]) insightsHabitLogs[r.habit_id]=new Set();
-    insightsHabitLogs[r.habit_id].add(r.done_on);
-  });
-  insightsMoodLogs = {};
-  (moodRows||[]).forEach(r=>{ insightsMoodLogs[r.logged_on]=r.mood; });
-  insightsFocusMinutesThisWeek = (focusRows||[]).filter(r=>insightsIsThisWeek(r.logged_on)).reduce((s,r)=>s+r.minutes,0);
-  insightsInitialized = true;
-  if(!document.getElementById('insightsDrawer').classList.contains('hidden') || document.getElementById('insightsDrawer').classList.contains('open')){
-    insightsRenderAll();
-  }
-}
-
-function insightsHeatmapCols(weeks=14){
-  const today=new Date();
-  const thisMonday=new Date(today); thisMonday.setDate(today.getDate()-((today.getDay()+6)%7));
-  const startMonday=new Date(thisMonday); startMonday.setDate(thisMonday.getDate()-7*(weeks-1));
-  const cols=[];
-  for(let w=0; w<weeks; w++){
-    const colStart=new Date(startMonday); colStart.setDate(startMonday.getDate()+7*w);
-    const days=[];
-    for(let d=0; d<7; d++){ const dt=new Date(colStart); dt.setDate(colStart.getDate()+d); days.push(dt.toISOString().slice(0,10)); }
-    cols.push(days);
-  }
-  return cols;
-}
-function insightsHabitStreak(habitId){
-  const set=insightsHabitLogs[habitId]||new Set();
-  let streak=0; let d=new Date();
-  if(!set.has(todayString())) d.setDate(d.getDate()-1);
-  while(set.has(d.toISOString().slice(0,10))){ streak++; d.setDate(d.getDate()-1); }
-  return streak;
-}
-function insightsHabitWeekPct(habitId){
-  const set=insightsHabitLogs[habitId]||new Set();
-  const monday=insightsWeekStart();
-  let count=0;
-  for(let i=0;i<7;i++){ const dt=new Date(monday+'T00:00:00'); dt.setDate(dt.getDate()+i); const key=dt.toISOString().slice(0,10); if(key<=todayString() && set.has(key)) count++; }
-  return Math.round((count/7)*100);
-}
-
-function insightsRenderDashStats(){
-  const weeklyClasses = entries.filter(e=>e.type==='class'||e.type==='lab').length;
-  const tasksDone = todoTasks.filter(t=>t.done && insightsIsThisWeek(t.completedAt)).length;
-  const streakEl = document.getElementById('streakNum');
-  const currentStreak = streakEl ? streakEl.textContent : '0';
-  const focusHrs = (insightsFocusMinutesThisWeek/60).toFixed(1);
-  document.getElementById('dashStats').innerHTML = `
-    <div class="dash-stat"><div class="dash-stat-num">${weeklyClasses}</div><div class="dash-stat-lbl">classes / labs this week</div></div>
-    <div class="dash-stat"><div class="dash-stat-num">${focusHrs}</div><div class="dash-stat-lbl">focus hours this week</div></div>
-    <div class="dash-stat"><div class="dash-stat-num">${tasksDone}</div><div class="dash-stat-lbl">tasks done this week</div></div>
-    <div class="dash-stat"><div class="dash-stat-num">${currentStreak}</div><div class="dash-stat-lbl">productivepractice streak</div></div>`;
-}
-
-function insightsRenderHabits(){
-  const el=document.getElementById('habitsList');
-  el.innerHTML='';
-  if(insightsHabits.length===0){
-    el.innerHTML='<p class="empty-state" style="padding:20px 4px;">No habits yet — add one below.</p>';
-    return;
-  }
-  const cols=insightsHeatmapCols(14);
-  const todayKey=todayString();
-  insightsHabits.forEach(h=>{
-    const set=insightsHabitLogs[h.id]||new Set();
-    const card=document.createElement('div'); card.className='habit-card';
-    let heat='<div class="heatmap">';
-    cols.forEach(week=>{
-      heat+='<div class="heat-col">';
-      week.forEach(dateKey=>{
-        const isFuture=dateKey>todayKey;
-        const filled=set.has(dateKey);
-        heat+=`<div class="heat-cell${isFuture?' future':''}" data-habit="${h.id}" data-date="${dateKey}" style="${filled?`background:${h.color};border-color:${h.color};`:''}" title="${dateKey}"></div>`;
-      });
-      heat+='</div>';
-    });
-    heat+='</div>';
-    card.innerHTML=`
-      <div class="habit-head">
-        <div class="habit-name-row">
-          <span class="habit-dot" style="background:${h.color}"></span>
-          <span class="habit-name">${h.name}</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <span class="habit-meta">${insightsHabitStreak(h.id)}d streak · ${insightsHabitWeekPct(h.id)}% this wk</span>
-          <button class="habit-del" data-habit="${h.id}" title="Delete habit">✕</button>
-        </div>
-      </div>
-      ${heat}`;
-    el.appendChild(card);
-  });
-  el.querySelectorAll('.heat-cell:not(.future)').forEach(cell=>{
-    cell.onclick=()=>insightsToggleHabitDay(cell.dataset.habit, cell.dataset.date);
-  });
-  el.querySelectorAll('.habit-del').forEach(btn=>{
-    btn.onclick=()=>insightsDeleteHabit(btn.dataset.habit);
-  });
-}
-
-async function insightsToggleHabitDay(habitId, dateKey){
-  const set=insightsHabitLogs[habitId]||(insightsHabitLogs[habitId]=new Set());
-  const isMarked=set.has(dateKey);
-  if(isMarked){
-    const { error } = await sb.from('habit_log').delete().eq('habit_id',habitId).eq('done_on',dateKey);
-    if(error){ showToast('Could not update: '+error.message); return; }
-    set.delete(dateKey);
-  } else {
-    const { error } = await sb.from('habit_log').upsert({ user_id:currentUser.id, habit_id:habitId, done_on:dateKey }, { onConflict:'habit_id,done_on' });
-    if(error){ showToast('Could not update: '+error.message); return; }
-    set.add(dateKey);
-  }
-  insightsRenderHabits();
-}
-async function insightsAddHabit(){
-  const input=document.getElementById('newHabitName');
-  const name=input.value.trim();
-  if(!name){ input.focus(); return; }
-  const color=HABIT_PALETTE[insightsHabits.length % HABIT_PALETTE.length];
-  const { data, error } = await sb.from('habits').insert({ user_id:currentUser.id, name, color }).select().single();
-  if(error){ showToast('Could not add habit: '+error.message); return; }
-  insightsHabits.push(data);
-  input.value='';
-  insightsRenderHabits();
-  showToast('Habit added ✓');
-}
-async function insightsDeleteHabit(habitId){
-  const { error } = await sb.from('habits').delete().eq('id',habitId);
-  if(error){ showToast('Could not delete: '+error.message); return; }
-  insightsHabits = insightsHabits.filter(h=>h.id!==habitId);
-  delete insightsHabitLogs[habitId];
-  insightsRenderHabits();
-  showToast('Habit removed');
-}
-
-function insightsRenderMood(){
-  const faces=['😞','🙁','😐','🙂','😄'];
-  const todayMood=insightsMoodLogs[todayString()];
-  const row=document.getElementById('moodRow');
-  row.innerHTML='';
-  faces.forEach((face,i)=>{
-    const val=i+1;
-    const btn=document.createElement('button');
-    btn.className='mood-btn'+(todayMood===val?' on':'');
-    btn.textContent=face;
-    btn.onclick=()=>insightsSetMood(val);
-    row.appendChild(btn);
-  });
-  const trendColors=['#A64B3B','#C2795A','#B8894F','#7FA098','#4B7A74'];
-  const trend=document.getElementById('moodTrend');
-  trend.innerHTML='';
-  for(let i=6;i>=0;i--){
-    const dt=new Date(); dt.setDate(dt.getDate()-i);
-    const key=dt.toISOString().slice(0,10);
-    const mood=insightsMoodLogs[key];
-    const wrap=document.createElement('div'); wrap.style.textAlign='center';
-    wrap.innerHTML=`<div class="mood-trend-dot" style="${mood?`background:${trendColors[mood-1]};border-color:${trendColors[mood-1]};`:''}"></div><div class="mood-trend-lbl">${DAY_SHORT[dt.getDay()][0]}</div>`;
-    trend.appendChild(wrap);
-  }
-}
-async function insightsSetMood(val){
-  const key=todayString();
-  const { error } = await sb.from('mood_log').upsert({ user_id:currentUser.id, logged_on:key, mood:val }, { onConflict:'user_id,logged_on' });
-  if(error){ showToast('Could not save: '+error.message); return; }
-  insightsMoodLogs[key]=val;
-  insightsRenderMood();
-}
-
-async function insightsLoadReview(){
-  const weekStart=insightsWeekStart();
-  document.getElementById('reviewWeekLabel').textContent=weekStart.slice(5).replace('-','/');
-  const { data } = await sb.from('weekly_reviews').select('*').eq('week_start',weekStart).maybeSingle();
-  document.getElementById('reviewFinished').value = data?.finished || '';
-  document.getElementById('reviewRolling').value = data?.rolling_over || '';
-}
-async function insightsSaveReview(){
-  const weekStart=insightsWeekStart();
-  const finished=document.getElementById('reviewFinished').value.trim();
-  const rolling=document.getElementById('reviewRolling').value.trim();
-  const { error } = await sb.from('weekly_reviews').upsert({ user_id:currentUser.id, week_start:weekStart, finished, rolling_over:rolling }, { onConflict:'user_id,week_start' });
-  if(error){ showToast('Could not save review: '+error.message); return; }
-  showToast('Weekly review saved ✓');
-}
-
-function insightsRenderAll(){
-  insightsRenderDashStats();
-  insightsRenderHabits();
-  insightsRenderMood();
-  insightsLoadReview();
-}
-
-const insightsOverlay=document.getElementById('insightsOverlay');
-const insightsDrawer=document.getElementById('insightsDrawer');
-document.getElementById('openInsightsBtn').onclick=()=>{
-  insightsOverlay.classList.add('open'); insightsDrawer.classList.add('open');
-  if(insightsInitialized) insightsRenderAll();
-};
-document.getElementById('insightsCloseBtn').onclick=()=>{ insightsOverlay.classList.remove('open'); insightsDrawer.classList.remove('open'); };
-insightsOverlay.onclick=()=>{ insightsOverlay.classList.remove('open'); insightsDrawer.classList.remove('open'); };
-document.getElementById('addHabitBtn').onclick=insightsAddHabit;
-document.getElementById('newHabitName').addEventListener('keydown',e=>{ if(e.key==='Enter') insightsAddHabit(); });
-document.getElementById('saveReviewBtn').onclick=insightsSaveReview;
-
-// passive focus-session tracker — only reads the existing pomoIsBreak global, never modifies it
-let _lastPomoIsBreak=false;
-setInterval(async ()=>{
-  if(!currentUser) return;
-  if(typeof pomoIsBreak!=='undefined' && pomoIsBreak && !_lastPomoIsBreak){
-    await sb.from('focus_log').insert({ user_id:currentUser.id, minutes:25 });
-    insightsFocusMinutesThisWeek += 25;
-  }
-  _lastPomoIsBreak = (typeof pomoIsBreak!=='undefined') ? pomoIsBreak : false;
-}, 2000);
 
 // ---------- boot ----------
 (function boot(){
