@@ -123,7 +123,7 @@
   .chip{font-family:'JetBrains Mono',monospace; font-size:11px; padding:5px 10px; border:1px solid var(--line); border-radius:12px; cursor:pointer; color:var(--muted);}
   .chip:hover{border-color:var(--brass); color:var(--brass);}
   .save-btn{width:100%; padding:13px; background:var(--fg); color:var(--bg); border:none; font-family:'Jost'; font-weight:500; font-size:14px; letter-spacing:.03em; cursor:pointer; margin-top:6px; border-radius:2px;}
-  .toast{position:fixed; bottom:28px; left:28px; background:var(--fg); color:var(--bg); padding:14px 20px; font-family:'Jost'; font-size:13.5px; border-radius:2px; z-index:50; max-width:320px; transform:translateY(20px); opacity:0; transition:all .3s ease; pointer-events:none;}
+  .toast{position:fixed; bottom:28px; left:28px; background:var(--fg); color:var(--bg); padding:14px 20px; font-family:'Jost'; font-size:13.5px; border-radius:2px; z-index:200; max-width:320px; transform:translateY(20px); opacity:0; transition:all .3s ease; pointer-events:none;}
   .toast.show{transform:translateY(0); opacity:1;}
 
   /* AUTH SCREEN */
@@ -790,7 +790,7 @@
   <div class="pp-modal" role="dialog" aria-modal="true" aria-labelledby="ppTitle">
     <div class="pp-modal-head">
       <div>
-        <p class="eyebrow">ProductivePractice / Rhythm</p>
+        <p class="eyebrow" style="text-transform:none;">ProductivePractice / Rhythm</p>
         <h2 id="ppTitle">Habits &amp; analytics</h2>
       </div>
       <button class="icon-btn" id="ppClose" title="Close">✕</button>
