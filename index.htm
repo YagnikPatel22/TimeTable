@@ -1104,6 +1104,8 @@ sb.auth.onAuthStateChange((event, session)=>{
     document.getElementById('appWrap').classList.remove('hidden');
     document.getElementById('fabBtn').classList.remove('hidden');
     document.getElementById('userBadge').textContent = currentUser.email;
+    notifSyncButtonToPermission();
+    notifArmAutoPrompt();
     loadData();
     todoLoadTasks();
     notifLoadSettings();
@@ -1439,6 +1441,26 @@ document.getElementById('alertBtn').onclick = async ()=>{
   if(perm==='granted'){ btn.textContent='Alerts on'; btn.classList.add('on'); showToast('Alerts enabled — keep this tab open.'); }
   else{ showToast('Alerts blocked in browser settings.'); }
 };
+function notifSyncButtonToPermission(){
+  const btn = document.getElementById('alertBtn');
+  if(!('Notification' in window)) return;
+  if(Notification.permission==='granted'){ btn.textContent='Alerts on'; btn.classList.add('on'); }
+  else{ btn.textContent='Enable alerts'; btn.classList.remove('on'); }
+}
+// Auto-prompt on the very first genuine click anywhere in the app, so most people
+// never need to find the button — browsers require a real user gesture to ask at
+// all, so this rides the first tap instead of asking you to hunt for a switch.
+function notifArmAutoPrompt(){
+  if(!('Notification' in window) || Notification.permission!=='default') return;
+  const handler = async ()=>{
+    document.removeEventListener('click', handler);
+    unlockAudio();
+    const perm = await Notification.requestPermission();
+    notifSyncButtonToPermission();
+    if(perm==='granted') showToast('Alerts enabled — keep this tab open.');
+  };
+  document.addEventListener('click', handler, { once:true });
+}
 let notifSnoozeUntil = {}; // entryId -> timestamp ms
 let notifSettings = { quiet_start:null, quiet_end:null, morning_summary:true, morning_summary_time:'08:00', last_summary_date:null };
 
