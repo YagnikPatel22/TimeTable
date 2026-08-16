@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ephemeral — Timetable</title>
+<title>Ephemeral — TimeTable</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -694,7 +694,7 @@
     <div id="taskList"></div>
 
     <footer>
-      <span class="ft-left">Yagnik!</span>
+      <span class="ft-left">thanks for using Ephemerals'</span>
       <div class="ft-right">
         <div class="kbds"><span class="key">⏎</span> add</div>
         <div class="kbds"><span class="key">/</span> search</div>
@@ -830,7 +830,7 @@
     <div class="field"><label>Start (24h)</label><input id="fStart" type="time" value="09:00"></div>
     <div class="field"><label>End (24h)</label><input id="fEnd" type="time" value="10:00"></div>
   </div>
-  <div class="field"><label>Location</label><input id="fLoc" placeholder="e.g. LT-3 / Lab 2 / Home"></div>
+  <div class="field"><label>Location</label><input id="fLoc" placeholder="e.g. ClassRoom / CEP / LT / Lab / Home"></div>
   <div class="field"><label>Notify before (minutes)</label><input id="fNotify" type="number" value="15" min="1" max="120"></div>
   <div class="chk-row">
     <input type="checkbox" id="fMuted">
@@ -2023,35 +2023,35 @@ function todoDoExport(fmt){
   const d=todoTodayISO().replace(/-/g,'/');
   const pen=todoTasks.filter(t=>!t.done), don=todoTasks.filter(t=>t.done);
   if(fmt==='txt'){
-    let out=`YAGNIK'S TODOS — ${d}\n${'─'.repeat(36)}\n\nPENDING (${pen.length})\n`;
+    let out=`Ephemerals' Todos — ${d}\n${'─'.repeat(36)}\n\nPENDING (${pen.length})\n`;
     pen.forEach((t,i)=>{out+=`\n${i+1}. [${(TODO_PRI[t.priority]||TODO_PRI.medium).lbl.toUpperCase()}] ${t.text}`; if(t.note)out+=`\n   Note: ${t.note}`; if(t.dueDate)out+=`\n   Due:  ${todoFmtYMD(t.dueDate)}`; out+=`\n   Tag:  ${(TODO_TAGS[t.tag]||{lbl:t.tag}).lbl}`;});
     out+=`\n\n${'─'.repeat(36)}\nDONE (${don.length})\n`;
     don.forEach((t,i)=>out+=`\n${i+1}. ✓ ${t.text}`);
-    todoDl(out,`yagnik-todos-${todoTodayISO()}.txt`,'text/plain'); showToast('Exported as .TXT ↓');
+    todoDl(out,`Ephemerals'-todos-${todoTodayISO()}.txt`,'text/plain'); showToast('Exported as .TXT ↓');
   }else if(fmt==='csv'){
     const rows=[['Status','Task','Tag','Priority','Due Date','Note','Added']];
     todoTasks.forEach(t=>rows.push([t.done?'Done':'Pending',`"${t.text.replace(/"/g,'""')}"`,
       (TODO_TAGS[t.tag]||{lbl:t.tag}).lbl,(TODO_PRI[t.priority]||TODO_PRI.medium).lbl,
       todoFmtYMD(t.dueDate)||'',`"${(t.note||'').replace(/"/g,'""')}"`,todoFmtDate(t.createdAt)]));
-    todoDl(rows.map(r=>r.join(',')).join('\n'),`yagnik-todos-${todoTodayISO()}.csv`,'text/csv'); showToast('Exported as .CSV ↓');
+    todoDl(rows.map(r=>r.join(',')).join('\n'),`Ephemerals'-todos-${todoTodayISO()}.csv`,'text/csv'); showToast('Exported as .CSV ↓');
   }else if(fmt==='md'){
-    const lines=[`# Yagnik's Todos — ${d}`,`*Exported from Ephemeral*`,''];
+    const lines=[`# Ephemerals' Todos — ${d}`,`*Exported from Ephemeral*`,''];
     if(pen.length){lines.push(`## Pending (${pen.length})`,''); pen.forEach(t=>{lines.push(`- [ ] **${t.text}**`); if(t.note)lines.push(`  > ${t.note}`); if(t.dueDate)lines.push(`  Due: \`${todoFmtYMD(t.dueDate)}\``); lines.push(`  \`${(TODO_TAGS[t.tag]||{lbl:t.tag}).lbl}\` · ${(TODO_PRI[t.priority]||TODO_PRI.medium).lbl} priority`,'');});}
     if(don.length){lines.push(`## Done (${don.length})`,''); don.forEach(t=>lines.push(`- [x] ~~${t.text}~~`));}
-    todoDl(lines.join('\n'),`yagnik-todos-${todoTodayISO()}.md`,'text/markdown'); showToast('Exported as .MD ↓');
+    todoDl(lines.join('\n'),`Ephemerals'-todos-${todoTodayISO()}.md`,'text/markdown'); showToast('Exported as .MD ↓');
   }else if(fmt==='pdf'){
     const w=window.open('','_blank');
     const pen2=todoTasks.filter(t=>!t.done), don2=todoTasks.filter(t=>t.done);
     const tr=t=>`<tr><td>${t.text}</td><td>${(TODO_TAGS[t.tag]||{lbl:t.tag}).lbl}</td><td>${(TODO_PRI[t.priority]||TODO_PRI.medium).lbl}</td><td>${todoFmtYMD(t.dueDate)||'—'}</td><td>${t.note||'—'}</td></tr>`;
     const tr2=t=>`<tr style="color:#999;text-decoration:line-through"><td>${t.text}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>`;
-    w.document.write(`<!DOCTYPE html><html><head><title>Yagnik's Todos</title><style>*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,sans-serif;}body{padding:40px;color:#111;font-size:13px;}h1{font-size:28px;font-weight:800;letter-spacing:-.04em;margin-bottom:4px;}.sub{color:#888;font-size:11px;margin-bottom:28px;}h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#555;margin:24px 0 10px;}table{width:100%;border-collapse:collapse;}th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;padding:6px 10px;border-bottom:1px solid #eee;}td{padding:9px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;}@media print{body{padding:20px;}}</style></head><body><h1>Yagnik's Todos</h1><div class="sub">Exported ${d} · ${todoTasks.length} tasks total</div><h2>Pending (${pen2.length})</h2><table><thead><tr><th>Task</th><th>Tag</th><th>Priority</th><th>Due</th><th>Note</th></tr></thead><tbody>${pen2.map(tr).join('')}</tbody></table>${don2.length?`<h2>Done (${don2.length})</h2><table><thead><tr><th>Task</th><th>Tag</th><th>Priority</th><th>Due</th><th>Note</th></tr></thead><tbody>${don2.map(tr2).join('')}</tbody></table>`:''}</body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><title>Ephemerals' Todos</title><style>*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,sans-serif;}body{padding:40px;color:#111;font-size:13px;}h1{font-size:28px;font-weight:800;letter-spacing:-.04em;margin-bottom:4px;}.sub{color:#888;font-size:11px;margin-bottom:28px;}h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#555;margin:24px 0 10px;}table{width:100%;border-collapse:collapse;}th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;padding:6px 10px;border-bottom:1px solid #eee;}td{padding:9px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;}@media print{body{padding:20px;}}</style></head><body><h1>Ephemerals'</h1><div class="sub">Exported ${d} · ${todoTasks.length} tasks total</div><h2>Pending (${pen2.length})</h2><table><thead><tr><th>Task</th><th>Tag</th><th>Priority</th><th>Due</th><th>Note</th></tr></thead><tbody>${pen2.map(tr).join('')}</tbody></table>${don2.length?`<h2>Done (${don2.length})</h2><table><thead><tr><th>Task</th><th>Tag</th><th>Priority</th><th>Due</th><th>Note</th></tr></thead><tbody>${don2.map(tr2).join('')}</tbody></table>`:''}</body></html>`);
     w.document.close(); w.focus(); w.print(); showToast('PDF print dialog opened ↓');
   }
 }
 function todoShareWhatsApp(){
   const pen=todoTasks.filter(t=>!t.done);
   if(!pen.length){showToast('No pending tasks to share!'); return;}
-  let msg=`*Yagnik's Todos* 📋\n_${todoTodayISO().replace(/-/g,'/')}_\n\n`;
+  let msg=`*Ephemerals' Todos* 📋\n_${todoTodayISO().replace(/-/g,'/')}_\n\n`;
   pen.forEach((t,i)=>{msg+=`${i+1}. ⏳ *${t.text}*`; if(t.dueDate)msg+=` (Due: ${todoFmtYMD(t.dueDate)})`; msg+='\n';});
   msg+=`\n_${pen.length} task${pen.length!==1?'s':''} pending_`;
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
