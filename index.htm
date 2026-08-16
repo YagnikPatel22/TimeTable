@@ -912,7 +912,14 @@
 
   <div id="groupDetailView" class="hidden">
     <button class="pill-btn" id="backToGroupsBtn" style="margin-bottom:16px;">← All groups</button>
-    <p class="section-title" id="groupDetailName" style="font-size:20px;"></p>
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+      <p class="section-title" id="groupDetailName" style="font-size:20px; margin:0;"></p>
+      <button class="icon-btn" id="renameGroupBtn" title="Rename" style="border:1px solid var(--line); width:30px; height:30px; font-size:12px;">✎</button>
+    </div>
+    <div id="renameGroupBox" class="hidden" style="display:flex; gap:8px; margin-bottom:16px;">
+      <input id="renameGroupInp" class="insights-input" placeholder="Group name">
+      <button class="pill-btn" id="saveRenameGroupBtn">Save</button>
+    </div>
     <button class="pill-btn" id="inviteToGroupBtn" style="margin-bottom:16px;">Invite someone →</button>
     <div id="groupInviteResult" class="hidden" style="margin-bottom:16px;">
       <div class="field"><label>Invite link</label><input id="groupInviteLinkOut" readonly style="font-size:12px;"></div>
@@ -926,6 +933,9 @@
       </div>
     </div>
     <div id="groupTodoList"></div>
+    <div id="deleteGroupBox" class="hidden" style="margin-top:24px; padding-top:20px; border-top:1px solid var(--line);">
+      <button class="pill-btn" id="deleteGroupBtn" style="width:100%; border-color:var(--rust); color:var(--rust);">Delete this group</button>
+    </div>
   </div>
 </div>
 
@@ -2214,9 +2224,13 @@ async function grpLoadGroups(){
   const el = document.getElementById('groupsList'); el.innerHTML='';
   if(!myGroups.length){ el.innerHTML='<p class="empty-state" style="padding:16px 4px;">No groups yet — create one above.</p>'; return; }
   myGroups.forEach(g=>{
-    const row=document.createElement('div'); row.className='entry'; row.style.cursor='pointer';
-    row.innerHTML=`<div class="entry-body"><div class="entry-title">${g.name}</div></div><div class="entry-actions">→</div>`;
-    row.onclick=()=>grpOpenDetail(g.id,g.name);
+    const isOwner = g.owner_id===currentUser.id;
+    const row=document.createElement('div'); row.className='entry';
+    row.innerHTML=`<div class="entry-body" style="cursor:pointer;"><div class="entry-title">${g.name}</div></div>
+      <div class="entry-actions">${isOwner?`<button class="grpQuickDelBtn" data-id="${g.id}" title="Delete group">✕</button>`:''}<span style="opacity:.4;">→</span></div>`;
+    row.querySelector('.entry-body').onclick=()=>grpOpenDetail(g.id,g.name,g.owner_id);
+    const delBtn = row.querySelector('.grpQuickDelBtn');
+    if(delBtn) delBtn.onclick=(e)=>{ e.stopPropagation(); grpDeleteGroup(g.id, g.name); };
     el.appendChild(row);
   });
 }
@@ -2237,14 +2251,46 @@ document.getElementById('backToGroupsBtn').onclick = ()=>{
   document.getElementById('groupsListView').classList.remove('hidden');
 };
 
-async function grpOpenDetail(id,name){
+let activeGroupIsOwner=false;
+async function grpOpenDetail(id,name,ownerId){
   activeGroupId=id;
+  activeGroupIsOwner = ownerId===currentUser.id;
   document.getElementById('groupsListView').classList.add('hidden');
   document.getElementById('groupDetailView').classList.remove('hidden');
   document.getElementById('groupDetailName').textContent=name;
   document.getElementById('groupInviteResult').classList.add('hidden');
+  document.getElementById('renameGroupBox').classList.add('hidden');
+  document.getElementById('renameGroupBtn').classList.toggle('hidden', !activeGroupIsOwner);
+  document.getElementById('deleteGroupBox').classList.toggle('hidden', !activeGroupIsOwner);
   await grpLoadTodos();
 }
+document.getElementById('renameGroupBtn').onclick = ()=>{
+  document.getElementById('renameGroupInp').value = document.getElementById('groupDetailName').textContent;
+  document.getElementById('renameGroupBox').classList.toggle('hidden');
+};
+document.getElementById('saveRenameGroupBtn').onclick = async ()=>{
+  const newName = document.getElementById('renameGroupInp').value.trim();
+  if(!newName) return;
+  const { error } = await sb.from('groups').update({ name:newName }).eq('id',activeGroupId);
+  if(error){ showToast('Could not rename: '+error.message); return; }
+  document.getElementById('groupDetailName').textContent = newName;
+  document.getElementById('renameGroupBox').classList.add('hidden');
+  showToast('Group renamed ✓');
+};
+async function grpDeleteGroup(id,name){
+  if(!confirm(`Delete "${name}"? This removes it for everyone in the group, including all its shared tasks. This can't be undone.`)) return;
+  const { error } = await sb.from('groups').delete().eq('id',id);
+  if(error){ showToast('Could not delete: '+error.message); return; }
+  showToast('Group deleted');
+  if(activeGroupId===id){
+    document.getElementById('groupDetailView').classList.add('hidden');
+    document.getElementById('groupsListView').classList.remove('hidden');
+  }
+  grpLoadGroups();
+}
+document.getElementById('deleteGroupBtn').onclick = ()=>{
+  grpDeleteGroup(activeGroupId, document.getElementById('groupDetailName').textContent);
+};
 async function grpLoadTodos(){
   const { data, error } = await sb.from('group_todos').select('*').eq('group_id',activeGroupId).order('created_at',{ascending:false});
   if(error){ showToast('Could not load: '+error.message); return; }
