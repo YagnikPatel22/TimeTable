@@ -467,6 +467,25 @@
   </div>
 </div>
 
+<!-- PUBLIC SHARE VIEW (no login) -->
+<div class="wrap hidden" id="shareView">
+  <p class="eyebrow" id="shareViewEyebrow">Ephemeral / Shared schedule</p>
+  <h1 class="display" style="margin-bottom:36px;">Their week</h1>
+  <div id="shareViewGrid" class="week-grid"></div>
+  <p class="streak-caption" style="text-align:center; margin-top:30px;">Read-only view, shared via Ephemeral.</p>
+</div>
+
+<!-- PUBLIC STUDY-WITH-ME VIEW (no login) -->
+<div class="wrap hidden" id="studyView">
+  <p class="eyebrow">Ephemeral / Study with me</p>
+  <div class="hero" style="text-align:center;">
+    <p class="hero-eyebrow" id="studyViewPhase">Focus</p>
+    <div class="hero-number" id="studyViewTime" style="font-size:clamp(64px,14vw,120px);">25:00</div>
+    <div class="hero-line" id="studyViewLine" style="width:0%"></div>
+  </div>
+  <p class="streak-caption" style="text-align:center; margin-top:20px;">Synced live — this follows the host's timer.</p>
+</div>
+
 <!-- AUTH SCREEN -->
 <div class="auth-screen" id="authScreen">
   <div class="auth-card">
@@ -516,7 +535,10 @@
   <p class="section-title" id="agendaTitle">Agenda</p>
   <div class="agenda" id="agendaList"></div>
 
-  <p class="section-title" style="margin-top:52px; padding-top:32px; border-top:1px solid var(--line);">Week at a glance</p>
+  <div style="display:flex; align-items:baseline; justify-content:space-between; margin-top:52px; padding-top:32px; border-top:1px solid var(--line);">
+    <p class="section-title" style="margin:0;">Week at a glance</p>
+    <button class="pill-btn" id="shareBtn" style="font-size:11.5px; padding:7px 14px;">Share ⇪</button>
+  </div>
   <div class="week-grid" id="weekGrid"></div>
 
   <div class="cards">
@@ -526,6 +548,17 @@
       <div class="pomo-controls">
         <button class="pill-btn" id="pomoToggle">Start</button>
         <button class="pill-btn" id="pomoReset">Reset</button>
+      </div>
+      <div id="studyPanel" style="margin-top:14px; border-top:1px solid var(--line); padding-top:14px;">
+        <button class="pill-btn" id="studyStartBtn" style="width:100%;">Study with me →</button>
+        <div id="studyActiveBox" class="hidden">
+          <p class="streak-caption" style="text-align:left; margin-bottom:8px;">Share this code or link — their timer follows yours live.</p>
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <div id="studyCodeDisplay" style="font-family:'JetBrains Mono',monospace; font-size:22px; letter-spacing:.1em; color:var(--brass);"></div>
+            <button class="icon-btn" id="studyCopyBtn" title="Copy join link" style="border:1px solid var(--line);">⧉</button>
+          </div>
+          <button class="pill-btn" id="studyEndBtn" style="width:100%;">End session</button>
+        </div>
       </div>
     </div>
     <div class="card">
@@ -656,6 +689,7 @@
       <button class="ftab" onclick="todoSetFilter('today',this)">Today</button>
       <button class="ftab" onclick="todoSetFilter('pinned',this)">Pinned</button>
     </div>
+    <button class="pill-btn" id="openGroupsBtn" style="margin-bottom:18px;">Group todos →</button>
 
     <div id="taskList"></div>
 
@@ -833,6 +867,68 @@
   <button class="save-btn" id="saveNotifSettings">Save settings</button>
 </div>
 
+<div class="drawer-overlay" id="shareOverlay"></div>
+<div class="drawer" id="shareDrawer">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <p class="section-title" style="margin:0;">Share schedule</p>
+    <button class="icon-btn" id="shareCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+  </div>
+  <p class="streak-caption" style="text-align:left; margin-bottom:16px;">Anyone with the link sees a read-only view — no editing, no login, no other data of yours.</p>
+  <div class="field"><label>What to share</label>
+    <select id="shareScope">
+      <option value="week">Whole week</option>
+      <option value="0">Sunday only</option><option value="1">Monday only</option><option value="2">Tuesday only</option>
+      <option value="3">Wednesday only</option><option value="4">Thursday only</option><option value="5">Friday only</option><option value="6">Saturday only</option>
+    </select>
+  </div>
+  <button class="save-btn" id="shareGenerateBtn">Generate link</button>
+  <div id="shareResult" class="hidden" style="margin-top:16px;">
+    <div class="field"><label>Link</label><input id="shareLinkOut" readonly style="font-size:12px;"></div>
+    <div style="display:flex; gap:8px; margin-bottom:14px;">
+      <button class="pill-btn" id="shareCopyBtn" style="flex:1;">Copy link</button>
+      <button class="pill-btn" id="shareQrBtn" style="flex:1;">Show QR</button>
+    </div>
+    <img id="shareQrImg" class="hidden" style="width:100%; border-radius:2px; border:1px solid var(--line);">
+  </div>
+  <p class="section-title" style="font-size:15px; margin-top:28px;">Active links</p>
+  <div id="shareLinksList"></div>
+</div>
+
+<div class="drawer-overlay" id="groupsOverlay"></div>
+<div class="drawer" id="groupsDrawer" style="width:min(560px,94vw);">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <p class="section-title" style="margin:0;">Group todos</p>
+    <button class="icon-btn" id="groupsCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+  </div>
+
+  <div id="groupsListView">
+    <div class="insights-add-row">
+      <input id="newGroupName" class="insights-input" placeholder="New group name (e.g. Aurum Robotics)">
+      <button class="pill-btn" id="createGroupBtn">Create</button>
+    </div>
+    <p class="section-title" style="font-size:16px; margin-top:24px;">Your groups</p>
+    <div id="groupsList"></div>
+  </div>
+
+  <div id="groupDetailView" class="hidden">
+    <button class="pill-btn" id="backToGroupsBtn" style="margin-bottom:16px;">← All groups</button>
+    <p class="section-title" id="groupDetailName" style="font-size:20px;"></p>
+    <button class="pill-btn" id="inviteToGroupBtn" style="margin-bottom:16px;">Invite someone →</button>
+    <div id="groupInviteResult" class="hidden" style="margin-bottom:16px;">
+      <div class="field"><label>Invite link</label><input id="groupInviteLinkOut" readonly style="font-size:12px;"></div>
+      <button class="pill-btn" id="groupInviteCopyBtn" style="width:100%;">Copy link</button>
+    </div>
+    <div class="add-section">
+      <div class="add-card">
+        <div class="add-main">
+          <input class="add-inp" id="groupTodoInp" placeholder="Add a shared task…">
+        </div>
+      </div>
+    </div>
+    <div id="groupTodoList"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <!-- PRODUCTIVEPRACTICE HABIT TRACKER -->
 <div class="pp-overlay" id="ppOverlay">
@@ -990,6 +1086,8 @@ document.getElementById('logoutBtn').onclick = async ()=>{
 
 sb.auth.onAuthStateChange((event, session)=>{
   if(maintenanceActive) return;
+  const _p = new URLSearchParams(location.search);
+  if(_p.get('share') || _p.get('study')) return;
   if(session && session.user){
     currentUser = session.user;
     document.getElementById('authScreen').classList.add('hidden');
@@ -999,6 +1097,7 @@ sb.auth.onAuthStateChange((event, session)=>{
     loadData();
     todoLoadTasks();
     notifLoadSettings();
+    grpAutoAcceptFromURL();
   } else {
     currentUser = null;
     document.getElementById('authScreen').classList.remove('hidden');
@@ -1951,9 +2050,263 @@ document.getElementById('tabTodoBtn').onclick = ()=>{
   document.getElementById('fabBtn').classList.add('hidden');
 };
 
+// ================= SHARE LINKS (additive, read-only public views) =================
+function shareRandCode(len=8){ const chars='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<len;i++) s+=chars[Math.floor(Math.random()*chars.length)]; return s; }
+
+async function shareOpen(){
+  document.getElementById('shareOverlay').classList.add('open');
+  document.getElementById('shareDrawer').classList.add('open');
+  await shareLoadLinks();
+}
+function shareClose(){
+  document.getElementById('shareOverlay').classList.remove('open');
+  document.getElementById('shareDrawer').classList.remove('open');
+}
+async function shareLoadLinks(){
+  const { data } = await sb.from('share_links').select('*').eq('revoked',false).order('created_at',{ascending:false});
+  const el=document.getElementById('shareLinksList'); el.innerHTML='';
+  if(!data || !data.length){ el.innerHTML='<p class="empty-state" style="padding:16px 4px;">No active links yet.</p>'; return; }
+  data.forEach(l=>{
+    const scopeLabel = l.scope==='week' ? 'Whole week' : DAY_NAMES[Number(l.scope)];
+    const row=document.createElement('div'); row.className='entry';
+    row.innerHTML = `<div class="entry-body"><div class="entry-title">${scopeLabel}</div><div class="entry-sub">${location.origin+location.pathname}?share=${l.token}</div></div>
+      <div class="entry-actions"><button class="revokeShareBtn" data-id="${l.id}">Revoke</button></div>`;
+    el.appendChild(row);
+  });
+  el.querySelectorAll('.revokeShareBtn').forEach(b=>{
+    b.onclick=async ()=>{
+      const { error } = await sb.from('share_links').update({revoked:true}).eq('id',b.dataset.id);
+      if(error){ showToast('Could not revoke: '+error.message); return; }
+      showToast('Link revoked'); shareLoadLinks();
+    };
+  });
+}
+document.getElementById('shareBtn').onclick = shareOpen;
+document.getElementById('shareCloseBtn').onclick = shareClose;
+document.getElementById('shareOverlay').onclick = shareClose;
+document.getElementById('shareGenerateBtn').onclick = async ()=>{
+  const scope = document.getElementById('shareScope').value;
+  const { data, error } = await sb.from('share_links').insert({ user_id:currentUser.id, scope }).select().single();
+  if(error){ showToast('Could not create link: '+error.message); return; }
+  const url = location.origin+location.pathname+'?share='+data.token;
+  document.getElementById('shareLinkOut').value = url;
+  document.getElementById('shareQrImg').classList.add('hidden');
+  document.getElementById('shareResult').classList.remove('hidden');
+  shareLoadLinks();
+};
+document.getElementById('shareCopyBtn').onclick = ()=>{
+  navigator.clipboard.writeText(document.getElementById('shareLinkOut').value).then(()=>showToast('Link copied ✓'));
+};
+document.getElementById('shareQrBtn').onclick = ()=>{
+  const url = document.getElementById('shareLinkOut').value;
+  const img = document.getElementById('shareQrImg');
+  img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data='+encodeURIComponent(url);
+  img.classList.remove('hidden');
+  showToast('QR loaded from a third-party image service — the link itself is embedded in it.');
+};
+
+async function renderPublicShareView(token){
+  const { data, error } = await sb.rpc('get_shared_entries', { p_token: token });
+  document.getElementById('shareView').classList.remove('hidden');
+  if(error || !data){ document.getElementById('shareViewGrid').innerHTML='<p class="empty-state">This link is invalid or has been revoked.</p>'; return; }
+  const el = document.getElementById('shareViewGrid'); el.innerHTML='';
+  for(let i=1;i<=7;i++){
+    const d=i%7;
+    const dayEntries = data.filter(e=>e.day===d).sort((a,b)=>a.start_time.localeCompare(b.start_time));
+    const col=document.createElement('div'); col.className='week-col';
+    let html=`<div class="week-col-head">${DAY_SHORT[d]}</div>`;
+    if(dayEntries.length===0) html+='<div class="week-empty">—</div>';
+    else dayEntries.forEach(e=>{ html+=`<div class="week-item"><div class="week-item-time">${e.start_time}</div><div class="week-item-title">${e.title}${e.location?' · '+e.location:''}</div></div>`; });
+    col.innerHTML=html; el.appendChild(col);
+  }
+}
+
+// ================= STUDY WITH ME (additive, Supabase Realtime) =================
+let activeStudyCode=null, activeStudyChannel=null;
+let _lastStudyRunning=null, _lastStudyPhase=null;
+
+document.getElementById('studyStartBtn').onclick = async ()=>{
+  if(!currentUser){ showToast('Sign in first.'); return; }
+  const code = shareRandCode(6);
+  const { error } = await sb.from('study_sessions').insert({
+    code, host_id: currentUser.id, phase: pomoIsBreak?'break':'focus',
+    duration_seconds: pomoIsBreak?300:1500, is_running: pomoRunning
+  });
+  if(error){ showToast('Could not start session: '+error.message); return; }
+  activeStudyCode = code;
+  document.getElementById('studyStartBtn').classList.add('hidden');
+  document.getElementById('studyActiveBox').classList.remove('hidden');
+  document.getElementById('studyCodeDisplay').textContent = code;
+  showToast('Study session started — share the code or link.');
+};
+document.getElementById('studyEndBtn').onclick = async ()=>{
+  if(!activeStudyCode) return;
+  await sb.from('study_sessions').delete().eq('code',activeStudyCode);
+  activeStudyCode=null;
+  document.getElementById('studyStartBtn').classList.remove('hidden');
+  document.getElementById('studyActiveBox').classList.add('hidden');
+  showToast('Session ended.');
+};
+document.getElementById('studyCopyBtn').onclick = ()=>{
+  if(!activeStudyCode) return;
+  const url = location.origin+location.pathname+'?study='+activeStudyCode;
+  navigator.clipboard.writeText(url).then(()=>showToast('Join link copied ✓'));
+};
+
+async function renderPublicStudyView(code){
+  document.getElementById('studyView').classList.remove('hidden');
+  const { data } = await sb.from('study_sessions').select('*').eq('code',code).maybeSingle();
+  if(!data){ document.getElementById('studyViewPhase').textContent='Session not found — it may have ended.'; return; }
+  let row = data;
+  function tick(){
+    document.getElementById('studyViewPhase').textContent = row.phase==='break' ? 'Break' : 'Focus';
+    let remaining;
+    if(row.is_running){
+      const elapsed = Math.floor((Date.now() - new Date(row.phase_started_at).getTime())/1000);
+      remaining = Math.max(0, row.duration_seconds - elapsed);
+    } else {
+      remaining = row.paused_remaining ?? row.duration_seconds;
+    }
+    const m=Math.floor(remaining/60), s=remaining%60;
+    document.getElementById('studyViewTime').textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    document.getElementById('studyViewLine').style.width = row.duration_seconds ? (100-(remaining/row.duration_seconds*100))+'%' : '0%';
+  }
+  tick();
+  setInterval(tick,1000);
+  sb.channel('study-'+code)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'study_sessions',filter:'code=eq.'+code},(payload)=>{ row=payload.new; tick(); })
+    .on('postgres_changes',{event:'DELETE',schema:'public',table:'study_sessions',filter:'code=eq.'+code},()=>{ document.getElementById('studyViewPhase').textContent='Session ended.'; })
+    .subscribe();
+}
+
+// passive study-session sync — only reads existing pomodoro globals, never modifies them
+setInterval(async ()=>{
+  if(!activeStudyCode || !currentUser) return;
+  const runningNow = pomoRunning, phaseNow = pomoIsBreak?'break':'focus';
+  if(runningNow!==_lastStudyRunning || phaseNow!==_lastStudyPhase){
+    if(runningNow){
+      await sb.from('study_sessions').update({ is_running:true, phase:phaseNow, duration_seconds: phaseNow==='break'?300:1500, phase_started_at:new Date().toISOString(), paused_remaining:null }).eq('code',activeStudyCode);
+    } else {
+      await sb.from('study_sessions').update({ is_running:false, paused_remaining:pomoSeconds }).eq('code',activeStudyCode);
+    }
+    _lastStudyRunning=runningNow; _lastStudyPhase=phaseNow;
+  }
+}, 2000);
+
+// ================= GROUP TODOS (additive) =================
+let myGroups=[]; let activeGroupId=null; let activeGroupTodos=[];
+
+async function grpOpen(){
+  document.getElementById('groupsOverlay').classList.add('open');
+  document.getElementById('groupsDrawer').classList.add('open');
+  document.getElementById('groupDetailView').classList.add('hidden');
+  document.getElementById('groupsListView').classList.remove('hidden');
+  await grpLoadGroups();
+}
+function grpClose(){
+  document.getElementById('groupsOverlay').classList.remove('open');
+  document.getElementById('groupsDrawer').classList.remove('open');
+}
+async function grpLoadGroups(){
+  const { data, error } = await sb.from('groups').select('*').order('created_at');
+  if(error){ showToast('Could not load groups: '+error.message); return; }
+  myGroups = data||[];
+  const el = document.getElementById('groupsList'); el.innerHTML='';
+  if(!myGroups.length){ el.innerHTML='<p class="empty-state" style="padding:16px 4px;">No groups yet — create one above.</p>'; return; }
+  myGroups.forEach(g=>{
+    const row=document.createElement('div'); row.className='entry'; row.style.cursor='pointer';
+    row.innerHTML=`<div class="entry-body"><div class="entry-title">${g.name}</div></div><div class="entry-actions">→</div>`;
+    row.onclick=()=>grpOpenDetail(g.id,g.name);
+    el.appendChild(row);
+  });
+}
+document.getElementById('openGroupsBtn').onclick = grpOpen;
+document.getElementById('groupsCloseBtn').onclick = grpClose;
+document.getElementById('groupsOverlay').onclick = grpClose;
+document.getElementById('createGroupBtn').onclick = async ()=>{
+  const name = document.getElementById('newGroupName').value.trim();
+  if(!name) return;
+  const { data, error } = await sb.from('groups').insert({ name, owner_id:currentUser.id }).select().single();
+  if(error){ showToast('Could not create group: '+error.message); return; }
+  await sb.from('group_members').insert({ group_id:data.id, user_id:currentUser.id });
+  document.getElementById('newGroupName').value='';
+  showToast('Group created ✓'); grpLoadGroups();
+};
+document.getElementById('backToGroupsBtn').onclick = ()=>{
+  document.getElementById('groupDetailView').classList.add('hidden');
+  document.getElementById('groupsListView').classList.remove('hidden');
+};
+
+async function grpOpenDetail(id,name){
+  activeGroupId=id;
+  document.getElementById('groupsListView').classList.add('hidden');
+  document.getElementById('groupDetailView').classList.remove('hidden');
+  document.getElementById('groupDetailName').textContent=name;
+  document.getElementById('groupInviteResult').classList.add('hidden');
+  await grpLoadTodos();
+}
+async function grpLoadTodos(){
+  const { data, error } = await sb.from('group_todos').select('*').eq('group_id',activeGroupId).order('created_at',{ascending:false});
+  if(error){ showToast('Could not load: '+error.message); return; }
+  activeGroupTodos = data||[];
+  const el = document.getElementById('groupTodoList'); el.innerHTML='';
+  if(!activeGroupTodos.length){ el.innerHTML='<p class="empty-state" style="padding:16px 4px;">No shared tasks yet.</p>'; return; }
+  activeGroupTodos.forEach(t=>{
+    const row=document.createElement('div'); row.className='entry';
+    row.innerHTML = `<div class="chk-col"><div class="chk${t.done?' done':''}" style="width:20px;height:20px;">
+        <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div></div>
+      <div class="entry-body"><div class="entry-title${t.done?' done':''}" style="${t.done?'opacity:.4;text-decoration:line-through;':''}">${t.text}</div></div>
+      <div class="entry-actions"><button class="grpDelBtn" data-id="${t.id}">✕</button></div>`;
+    row.querySelector('.chk').onclick=()=>grpToggleTodo(t.id,!t.done);
+    row.querySelector('.grpDelBtn').onclick=()=>grpDeleteTodo(t.id);
+    el.appendChild(row);
+  });
+}
+document.getElementById('groupTodoInp').addEventListener('keydown', async (e)=>{
+  if(e.key!=='Enter') return;
+  const txt=e.target.value.trim(); if(!txt) return;
+  const { error } = await sb.from('group_todos').insert({ group_id:activeGroupId, text:txt, created_by:currentUser.id });
+  if(error){ showToast('Could not add: '+error.message); return; }
+  e.target.value=''; grpLoadTodos();
+});
+async function grpToggleTodo(id,done){
+  const { error } = await sb.from('group_todos').update({ done, completed_at: done?new Date().toISOString():null }).eq('id',id);
+  if(error){ showToast('Could not update: '+error.message); return; }
+  grpLoadTodos();
+}
+async function grpDeleteTodo(id){
+  const { error } = await sb.from('group_todos').delete().eq('id',id);
+  if(error){ showToast('Could not delete: '+error.message); return; }
+  grpLoadTodos();
+}
+document.getElementById('inviteToGroupBtn').onclick = async ()=>{
+  const { data, error } = await sb.from('group_invites').insert({ group_id:activeGroupId, created_by:currentUser.id }).select().single();
+  if(error){ showToast('Could not create invite: '+error.message); return; }
+  const url = location.origin+location.pathname+'?joinGroup='+data.token;
+  document.getElementById('groupInviteLinkOut').value = url;
+  document.getElementById('groupInviteResult').classList.remove('hidden');
+};
+document.getElementById('groupInviteCopyBtn').onclick = ()=>{
+  navigator.clipboard.writeText(document.getElementById('groupInviteLinkOut').value).then(()=>showToast('Invite link copied ✓'));
+};
+async function grpAutoAcceptFromURL(){
+  const token = new URLSearchParams(location.search).get('joinGroup');
+  if(!token || !currentUser) return;
+  const { error } = await sb.rpc('accept_group_invite', { p_token: token });
+  if(error){ showToast('Invite link is invalid or already used.'); return; }
+  showToast("You're in — group added to your Groups list.");
+  history.replaceState(null,'',location.pathname);
+}
+
 // ---------- boot ----------
 (function boot(){
   if(checkMaintenance()) return;
+  const params = new URLSearchParams(location.search);
+  const shareToken = params.get('share');
+  const studyCode = params.get('study');
+  if(shareToken){ renderPublicShareView(shareToken); return; }
+  if(studyCode){ renderPublicStudyView(studyCode); return; }
   updatePomo();
   todoBuildChips(); todoRender();
   setInterval(()=>{ if(currentUser){ renderHero(); checkNotifications(); } }, 20000);
