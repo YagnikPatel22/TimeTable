@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ephemeral — Timetable</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#121212">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ephemeral">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -536,7 +543,9 @@
     <div class="topbar-right">
       <span id="userBadge"></span>
       <button class="pill-btn" id="alertBtn">Enable alerts</button>
+      <button class="icon-btn" id="globalSearchBtn" title="Search everything">⌕</button>
       <button class="icon-btn" id="notifSettingsBtn" title="Notification settings">⚙</button>
+      <button class="icon-btn" id="exportBtn" title="Export your data">⇩</button>
       <button class="icon-btn" id="themeBtn" title="Toggle theme">☾</button>
       <button class="icon-btn" id="logoutBtn" title="Sign out">⎋</button>
     </div>
@@ -545,6 +554,7 @@
   <div class="view-tabs">
     <button class="pill-btn on" id="tabScheduleBtn">Schedule</button>
     <button class="pill-btn" id="tabTodoBtn">Todos</button>
+    <button class="pill-btn" id="tabDeadlinesBtn">Deadlines</button>
   </div>
 
   <div id="scheduleView">
@@ -830,6 +840,19 @@
 
   </div>
 
+  <div id="deadlinesView" class="hidden">
+    <div class="hero" id="deadlineHero">
+      <p class="hero-eyebrow">Next up</p>
+      <div class="hero-grid" id="deadlineHeroContent"><p class="hero-empty">No deadlines yet — add your first one.</p></div>
+      <div class="hero-line" id="deadlineHeroLine" style="width:0%"></div>
+    </div>
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-top:44px; margin-bottom:16px;">
+      <p class="section-title" style="margin:0;">Upcoming</p>
+      <button class="pill-btn" id="addDeadlineBtn">+ Add deadline</button>
+    </div>
+    <div class="agenda" id="deadlinesList"></div>
+  </div>
+
   <p style="text-align:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:56px; letter-spacing:.03em;">Made by Yagnik N. ❤️</p>
 
 </div>
@@ -840,6 +863,14 @@
   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
     <p class="section-title" id="drawerTitle" style="margin:0;">New entry</p>
     <button class="icon-btn" id="drawerCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+  </div>
+  <div class="field">
+    <label>Quick add <span style="opacity:.6; text-transform:none;">— type it naturally</span></label>
+    <div style="display:flex; gap:8px;">
+      <input id="nlQuickAdd" placeholder="e.g. guitar tomorrow 5pm" style="flex:1;">
+      <button class="pill-btn" id="nlParseBtn" style="flex-shrink:0;">Parse</button>
+    </div>
+    <p class="streak-caption" id="nlParseHint" style="text-align:left; margin-top:6px; min-height:1em;"></p>
   </div>
   <div class="chips" id="quickChips"></div>
   <div class="field"><label>Title</label><input id="fTitle" placeholder="e.g. IT305 — Computer Networks"></div>
@@ -961,6 +992,45 @@
     <div id="deleteGroupBox" class="hidden" style="margin-top:24px; padding-top:20px; border-top:1px solid var(--line);">
       <button class="pill-btn" id="deleteGroupBtn" style="width:100%; border-color:var(--rust); color:var(--rust);">Delete this group</button>
     </div>
+  </div>
+</div>
+
+<div class="drawer-overlay" id="deadlineOverlay"></div>
+<div class="drawer" id="deadlineDrawer">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <p class="section-title" id="deadlineDrawerTitle" style="margin:0;">New deadline</p>
+    <button class="icon-btn" id="deadlineCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+  </div>
+  <div class="field"><label>Title</label><input id="dTitle" placeholder="e.g. IT305 Mid-Semester Exam"></div>
+  <div class="row2">
+    <div class="field"><label>Type</label>
+      <select id="dType"><option value="exam">Exam</option><option value="assignment">Assignment</option><option value="deadline">Deadline</option></select>
+    </div>
+    <div class="field"><label>Due date</label><input id="dDate" type="date"></div>
+  </div>
+  <div class="field"><label>Notes (optional)</label><input id="dNotes" placeholder="Syllabus, chapters, portal link…"></div>
+  <button class="save-btn" id="saveDeadlineBtn">Save deadline</button>
+</div>
+
+<div class="drawer-overlay" id="exportOverlay"></div>
+<div class="drawer" id="exportDrawer">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <p class="section-title" style="margin:0;">Export your data</p>
+    <button class="icon-btn" id="exportCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+  </div>
+  <p class="streak-caption" style="text-align:left; margin-bottom:20px;">Everything — schedule, todos, habit history, streaks, deadlines. Yours to keep.</p>
+  <button class="pill-btn" id="exportJsonBtn" style="width:100%; margin-bottom:10px;">Download JSON ↓</button>
+  <button class="pill-btn" id="exportPdfBtn" style="width:100%;">Download PDF ↓</button>
+</div>
+
+<!-- GLOBAL SEARCH -->
+<div class="modal-overlay" id="globalSearchOverlay" onclick="if(event.target===this)globalSearchClose()" style="align-items:flex-start; padding-top:14vh;">
+  <div class="modal" style="width:min(560px,92vw); border-radius:2px; text-align:left;">
+    <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:14px;">
+      <span style="opacity:.4;">⌕</span>
+      <input id="globalSearchInp" placeholder="Search schedule, todos, group tasks…" style="flex:1; background:none; border:none; outline:none; font-family:'Jost'; font-size:15px; color:var(--fg);">
+    </div>
+    <div id="globalSearchResults" style="max-height:52vh; overflow-y:auto;"></div>
   </div>
 </div>
 
@@ -1135,6 +1205,7 @@ sb.auth.onAuthStateChange((event, session)=>{
     todoLoadTasks();
     notifLoadSettings();
     grpAutoAcceptFromURL();
+    deadlineLoadAll();
   } else {
     currentUser = null;
     document.getElementById('authScreen').classList.remove('hidden');
@@ -2092,12 +2163,24 @@ document.addEventListener('keydown',e=>{
 });
 
 // ---------- schedule / todos tab switch ----------
+function switchToTab(tab){
+  document.getElementById('scheduleView').classList.toggle('hidden', tab!=='schedule');
+  document.getElementById('todoView').classList.toggle('hidden', tab!=='todo');
+  document.getElementById('deadlinesView').classList.toggle('hidden', tab!=='deadlines');
+  document.getElementById('tabScheduleBtn').classList.toggle('on', tab==='schedule');
+  document.getElementById('tabTodoBtn').classList.toggle('on', tab==='todo');
+  document.getElementById('tabDeadlinesBtn').classList.toggle('on', tab==='deadlines');
+  document.getElementById('fabBtn').classList.toggle('hidden', tab!=='schedule');
+  if(tab==='deadlines') deadlineRender();
+}
 document.getElementById('tabScheduleBtn').onclick = ()=>{
   document.getElementById('scheduleView').classList.remove('hidden');
   document.getElementById('todoView').classList.add('hidden');
   document.getElementById('tabScheduleBtn').classList.add('on');
   document.getElementById('tabTodoBtn').classList.remove('on');
   document.getElementById('fabBtn').classList.remove('hidden');
+  document.getElementById('deadlinesView').classList.add('hidden');
+  document.getElementById('tabDeadlinesBtn').classList.remove('on');
 };
 document.getElementById('tabTodoBtn').onclick = ()=>{
   document.getElementById('scheduleView').classList.add('hidden');
@@ -2105,7 +2188,10 @@ document.getElementById('tabTodoBtn').onclick = ()=>{
   document.getElementById('tabTodoBtn').classList.add('on');
   document.getElementById('tabScheduleBtn').classList.remove('on');
   document.getElementById('fabBtn').classList.add('hidden');
+  document.getElementById('deadlinesView').classList.add('hidden');
+  document.getElementById('tabDeadlinesBtn').classList.remove('on');
 };
+document.getElementById('tabDeadlinesBtn').onclick = ()=>switchToTab('deadlines');
 
 // ================= SHARE LINKS (additive, read-only public views) =================
 function shareRandCode(len=8){ const chars='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<len;i++) s+=chars[Math.floor(Math.random()*chars.length)]; return s; }
@@ -2391,6 +2477,295 @@ async function grpAutoAcceptFromURL(){
   showToast("You're in — group added to your Groups list.");
   history.replaceState(null,'',location.pathname);
 }
+
+// ================= DEADLINES (additive) =================
+let deadlines = [];
+let editingDeadlineId = null;
+
+async function deadlineLoadAll(){
+  if(!currentUser) return;
+  const { data, error } = await sb.from('deadlines').select('*').order('due_date');
+  if(error){ showToast('Could not load deadlines: '+error.message); return; }
+  deadlines = data||[];
+  if(!document.getElementById('deadlinesView').classList.contains('hidden')) deadlineRender();
+}
+function deadlineDaysUntil(dateStr){
+  const today = new Date(todayString()+'T00:00:00');
+  const due = new Date(dateStr+'T00:00:00');
+  return Math.round((due-today)/86400000);
+}
+function deadlineTypeLabel(t){ return {exam:'Exam',assignment:'Assignment',deadline:'Deadline'}[t]||'Deadline'; }
+function deadlineTypeColor(t){ return {exam:'var(--rust)',assignment:'var(--brass)',deadline:'var(--teal)'}[t]||'var(--muted)'; }
+
+function deadlineRender(){
+  const upcoming = deadlines.filter(d=>d.due_date>=todayString()).sort((a,b)=>a.due_date.localeCompare(b.due_date));
+  const heroBox = document.getElementById('deadlineHeroContent');
+  const heroLine = document.getElementById('deadlineHeroLine');
+  if(!upcoming.length){
+    heroBox.innerHTML = '<p class="hero-empty">No deadlines yet — add your first one.</p>';
+    heroLine.style.width='0%';
+  } else {
+    const next = upcoming[0];
+    const days = deadlineDaysUntil(next.due_date);
+    const big = days===0 ? 'Today' : days===1 ? 'Tomorrow' : days+'d';
+    heroBox.innerHTML = `<div><span class="hero-number">${big}</span></div>
+      <div class="hero-detail"><p class="hero-title">${next.title}</p>
+      <p class="hero-meta">${deadlineTypeLabel(next.type)} · ${fmtYMDDate(next.due_date)}</p></div>`;
+    heroLine.style.width = Math.max(4, 100-Math.min(100,days*4))+'%';
+  }
+  const list = document.getElementById('deadlinesList');
+  list.innerHTML='';
+  if(!upcoming.length){ list.innerHTML='<p class="empty-state">Nothing on the horizon.</p>'; return; }
+  upcoming.forEach(d=>{
+    const days = deadlineDaysUntil(d.due_date);
+    const daysLbl = days===0?'Today':days===1?'Tomorrow':days+'d away';
+    const row=document.createElement('div'); row.className='entry';
+    row.innerHTML = `
+      <div class="entry-time" style="width:74px;">${daysLbl}</div>
+      <div class="entry-dot" style="background:${deadlineTypeColor(d.type)}"></div>
+      <div class="entry-body">
+        <div class="entry-title">${d.title}</div>
+        <div class="entry-sub">${deadlineTypeLabel(d.type)} · ${fmtYMDDate(d.due_date)}${d.notes?' · '+d.notes:''}</div>
+      </div>
+      <div class="entry-actions">
+        <button title="Edit" data-id="${d.id}" class="editDeadlineBtn">✎</button>
+        <button title="Delete" data-id="${d.id}" class="delDeadlineBtn">✕</button>
+      </div>`;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('.delDeadlineBtn').forEach(b=>b.onclick=()=>deadlineDelete(b.dataset.id));
+  list.querySelectorAll('.editDeadlineBtn').forEach(b=>b.onclick=()=>{
+    const d = deadlines.find(x=>x.id===b.dataset.id); if(d) deadlineOpenEdit(d);
+  });
+}
+function fmtYMDDate(iso){ const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+
+function deadlineOpenNew(){
+  editingDeadlineId=null;
+  document.getElementById('deadlineDrawerTitle').textContent='New deadline';
+  document.getElementById('saveDeadlineBtn').textContent='Save deadline';
+  document.getElementById('dTitle').value=''; document.getElementById('dType').value='exam';
+  document.getElementById('dDate').value=todayString(); document.getElementById('dNotes').value='';
+  document.getElementById('deadlineOverlay').classList.add('open');
+  document.getElementById('deadlineDrawer').classList.add('open');
+}
+function deadlineOpenEdit(d){
+  editingDeadlineId=d.id;
+  document.getElementById('deadlineDrawerTitle').textContent='Edit deadline';
+  document.getElementById('saveDeadlineBtn').textContent='Update deadline';
+  document.getElementById('dTitle').value=d.title; document.getElementById('dType').value=d.type;
+  document.getElementById('dDate').value=d.due_date; document.getElementById('dNotes').value=d.notes||'';
+  document.getElementById('deadlineOverlay').classList.add('open');
+  document.getElementById('deadlineDrawer').classList.add('open');
+}
+function deadlineClose(){
+  document.getElementById('deadlineOverlay').classList.remove('open');
+  document.getElementById('deadlineDrawer').classList.remove('open');
+}
+document.getElementById('addDeadlineBtn').onclick = deadlineOpenNew;
+document.getElementById('deadlineCloseBtn').onclick = deadlineClose;
+document.getElementById('deadlineOverlay').onclick = deadlineClose;
+document.getElementById('saveDeadlineBtn').onclick = async ()=>{
+  const title = document.getElementById('dTitle').value.trim();
+  const due_date = document.getElementById('dDate').value;
+  if(!title || !due_date){ showToast('Give it a title and a date.'); return; }
+  const fields = { title, type:document.getElementById('dType').value, due_date, notes:document.getElementById('dNotes').value.trim() };
+  let error;
+  if(editingDeadlineId){ ({ error } = await sb.from('deadlines').update(fields).eq('id',editingDeadlineId)); }
+  else{ ({ error } = await sb.from('deadlines').insert({ ...fields, user_id:currentUser.id })); }
+  if(error){ showToast('Could not save: '+error.message); return; }
+  deadlineClose(); showToast(editingDeadlineId?'Deadline updated ✓':'Deadline added ✓');
+  await deadlineLoadAll(); deadlineRender();
+};
+async function deadlineDelete(id){
+  const { error } = await sb.from('deadlines').delete().eq('id',id);
+  if(error){ showToast('Could not delete: '+error.message); return; }
+  deadlines = deadlines.filter(d=>d.id!==id);
+  deadlineRender(); showToast('Deadline removed');
+}
+
+// ================= EXPORT EVERYTHING (additive) =================
+async function exportGatherAll(){
+  const [{data:entryRows},{data:todoRows},{data:habitRows},{data:habitLogRows},{data:deadlineRows},{data:groupTodoRows}] = await Promise.all([
+    sb.from('entries').select('*'),
+    sb.from('todos').select('*'),
+    sb.from('habits').select('*'),
+    sb.from('habit_log').select('*'),
+    sb.from('deadlines').select('*'),
+    sb.from('group_todos').select('*, groups(name)')
+  ]);
+  return {
+    exported_at: new Date().toISOString(),
+    schedule_entries: entryRows||[],
+    todos: todoRows||[],
+    habits: habitRows||[],
+    habit_log: habitLogRows||[],
+    deadlines: deadlineRows||[],
+    group_todos: groupTodoRows||[],
+    productive_practice_streak_dates: guitarDates
+  };
+}
+document.getElementById('exportBtn').onclick = ()=>{
+  document.getElementById('exportOverlay').classList.add('open');
+  document.getElementById('exportDrawer').classList.add('open');
+};
+document.getElementById('exportCloseBtn').onclick = ()=>{
+  document.getElementById('exportOverlay').classList.remove('open');
+  document.getElementById('exportDrawer').classList.remove('open');
+};
+document.getElementById('exportOverlay').onclick = ()=>{
+  document.getElementById('exportOverlay').classList.remove('open');
+  document.getElementById('exportDrawer').classList.remove('open');
+};
+document.getElementById('exportJsonBtn').onclick = async ()=>{
+  showToast('Gathering your data…');
+  const data = await exportGatherAll();
+  todoDl(JSON.stringify(data,null,2), `ephemeral-export-${todayString()}.json`, 'application/json');
+  showToast('Exported as .JSON ↓');
+};
+document.getElementById('exportPdfBtn').onclick = async ()=>{
+  showToast('Gathering your data…');
+  const data = await exportGatherAll();
+  const w = window.open('','_blank');
+  const entryRow = e=>`<tr><td>${DAY_NAMES[e.day]}</td><td>${e.title}</td><td>${e.start_time}–${e.end_time}</td><td>${e.location||'—'}</td></tr>`;
+  const todoRow = t=>`<tr><td>${t.done?'✓':'—'}</td><td>${t.text}</td><td>${t.tag||'—'}</td><td>${t.due_date||'—'}</td></tr>`;
+  const deadlineRow = d=>`<tr><td>${d.title}</td><td>${deadlineTypeLabel(d.type)}</td><td>${d.due_date}</td></tr>`;
+  w.document.write(`<!DOCTYPE html><html><head><title>Ephemeral Export</title><style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,sans-serif;}
+    body{padding:40px;color:#111;font-size:13px;}
+    h1{font-size:28px;font-weight:800;letter-spacing:-.04em;margin-bottom:4px;}
+    .sub{color:#888;font-size:11px;margin-bottom:26px;}
+    h2{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#555;margin:26px 0 10px;}
+    table{width:100%;border-collapse:collapse;}
+    th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#aaa;padding:6px 10px;border-bottom:1px solid #eee;}
+    td{padding:9px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;}
+    @media print{body{padding:20px;}}
+  </style></head><body>
+    <h1>Ephemeral — Full Export</h1>
+    <div class="sub">Exported ${new Date().toLocaleString()}</div>
+    <h2>Schedule (${data.schedule_entries.length})</h2>
+    <table><thead><tr><th>Day</th><th>Title</th><th>Time</th><th>Location</th></tr></thead><tbody>${data.schedule_entries.map(entryRow).join('')}</tbody></table>
+    <h2>Todos (${data.todos.length})</h2>
+    <table><thead><tr><th>Done</th><th>Task</th><th>Tag</th><th>Due</th></tr></thead><tbody>${data.todos.map(todoRow).join('')}</tbody></table>
+    <h2>Deadlines (${data.deadlines.length})</h2>
+    <table><thead><tr><th>Title</th><th>Type</th><th>Due</th></tr></thead><tbody>${data.deadlines.map(deadlineRow).join('')}</tbody></table>
+    <h2>ProductivePractice streak — active days (${data.productive_practice_streak_dates.length})</h2>
+    <p>${data.productive_practice_streak_dates.join(', ')||'None yet'}</p>
+  </body></html>`);
+  w.document.close(); w.focus(); w.print();
+  showToast('PDF print dialog opened ↓');
+};
+
+// ================= GLOBAL SEARCH (additive) =================
+function globalSearchOpen(){
+  document.getElementById('globalSearchOverlay').classList.add('open');
+  document.getElementById('globalSearchInp').value='';
+  document.getElementById('globalSearchResults').innerHTML='';
+  setTimeout(()=>document.getElementById('globalSearchInp').focus(),50);
+}
+function globalSearchClose(){ document.getElementById('globalSearchOverlay').classList.remove('open'); }
+document.getElementById('globalSearchBtn').onclick = globalSearchOpen;
+document.addEventListener('keydown', e=>{
+  if((e.metaKey||e.ctrlKey) && e.key==='k'){ e.preventDefault(); globalSearchOpen(); }
+  if(e.key==='Escape') globalSearchClose();
+});
+let _groupTodoCache = null;
+async function globalSearchRun(q){
+  const el = document.getElementById('globalSearchResults');
+  if(!q.trim()){ el.innerHTML=''; return; }
+  const ql = q.trim().toLowerCase();
+  if(_groupTodoCache===null){
+    const { data } = await sb.from('group_todos').select('*, groups(name)');
+    _groupTodoCache = data||[];
+  }
+  const entryHits = entries.filter(e=>e.title.toLowerCase().includes(ql)||(e.location||'').toLowerCase().includes(ql));
+  const todoHits = (typeof todoTasks!=='undefined'?todoTasks:[]).filter(t=>t.text.toLowerCase().includes(ql));
+  const groupHits = _groupTodoCache.filter(t=>t.text.toLowerCase().includes(ql));
+  let html='';
+  if(entryHits.length){
+    html+=`<p class="streak-caption" style="text-align:left;">SCHEDULE</p>`;
+    entryHits.forEach(e=>{ html+=`<div class="entry gsr" data-kind="entry" data-day="${e.day}"><div class="entry-dot ${dotClass(e.type)}"></div><div class="entry-body"><div class="entry-title">${e.title}</div><div class="entry-sub">${DAY_SHORT[e.day]} · ${fmtTime(e.start)}${e.location?' · '+e.location:''}</div></div></div>`; });
+  }
+  if(todoHits.length){
+    html+=`<p class="streak-caption" style="text-align:left; margin-top:14px;">TODOS</p>`;
+    todoHits.forEach(t=>{ html+=`<div class="entry gsr" data-kind="todo"><div class="entry-dot" style="background:${t.done?'var(--teal)':'var(--brass)'}"></div><div class="entry-body"><div class="entry-title">${t.text}</div><div class="entry-sub">${t.done?'Done':'Pending'}</div></div></div>`; });
+  }
+  if(groupHits.length){
+    html+=`<p class="streak-caption" style="text-align:left; margin-top:14px;">GROUP TODOS</p>`;
+    groupHits.forEach(t=>{ html+=`<div class="entry gsr"><div class="entry-dot" style="background:${t.done?'var(--teal)':'var(--rust)'}"></div><div class="entry-body"><div class="entry-title">${t.text}</div><div class="entry-sub">${t.groups?.name||'Group'} · ${t.done?'Done':'Pending'}</div></div></div>`; });
+  }
+  if(!html) html = '<p class="empty-state" style="padding:20px 4px;">No matches.</p>';
+  el.innerHTML = html;
+  el.querySelectorAll('.gsr[data-kind="entry"]').forEach(row=>{
+    row.style.cursor='pointer';
+    row.onclick=()=>{ globalSearchClose(); switchToTab('schedule'); selectedDay=Number(row.dataset.day); render(); };
+  });
+  el.querySelectorAll('.gsr[data-kind="todo"]').forEach(row=>{
+    row.style.cursor='pointer';
+    row.onclick=()=>{ globalSearchClose(); switchToTab('todo'); };
+  });
+}
+document.getElementById('globalSearchInp').addEventListener('input', e=>globalSearchRun(e.target.value));
+
+// ================= NATURAL-LANGUAGE QUICK ADD (additive) =================
+function nlParseEntry(text){
+  const t = text.toLowerCase();
+  const now = new Date();
+  let day = null;
+  const dayNames = {sunday:0,sun:0,monday:1,mon:1,tuesday:2,tue:2,tues:2,wednesday:3,wed:3,thursday:4,thu:4,thurs:4,friday:5,fri:5,saturday:6,sat:6};
+  let consumed = text;
+
+  if(/\btoday\b/.test(t)) day = now.getDay();
+  else if(/\btomorrow\b/.test(t)) day = (now.getDay()+1)%7;
+  else{
+    for(const name in dayNames){
+      const re = new RegExp('\\b'+name+'\\b','i');
+      if(re.test(t)){ day = dayNames[name]; consumed = consumed.replace(re,''); break; }
+    }
+  }
+  consumed = consumed.replace(/\btoday\b/i,'').replace(/\btomorrow\b/i,'');
+
+  // time: "5pm", "5:30pm", "17:00", optionally a range "5pm-6pm" / "5 to 6pm"
+  const timeRe = /(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/gi;
+  const times=[];
+  let m;
+  while((m=timeRe.exec(consumed))!==null){
+    let h=parseInt(m[1],10), min=m[2]?parseInt(m[2],10):0;
+    const ap=m[3]?m[3].toLowerCase():null;
+    if(ap==='pm' && h<12) h+=12;
+    if(ap==='am' && h===12) h=0;
+    if(h>=0&&h<=23&&min>=0&&min<=59) times.push({h,min,raw:m[0],ap});
+  }
+  let start=null, end=null;
+  if(times.length>=1) start=times[0];
+  if(times.length>=2) end=times[1];
+
+  times.forEach(x=>{ consumed = consumed.replace(x.raw,''); });
+  consumed = consumed.replace(/\b(at|from|to|-)\b/gi,' ').replace(/\s+/g,' ').trim();
+
+  if(!start) return null;
+  const startStr = String(start.h).padStart(2,'0')+':'+String(start.min).padStart(2,'0');
+  let endStr;
+  if(end) endStr = String(end.h).padStart(2,'0')+':'+String(end.min).padStart(2,'0');
+  else { const eh=(start.h+1)%24; endStr = String(eh).padStart(2,'0')+':'+String(start.min).padStart(2,'0'); }
+
+  const title = consumed.trim().replace(/^\w/,c=>c.toUpperCase()) || 'Untitled';
+  return { title, day: day===null ? now.getDay() : day, start: startStr, end: endStr };
+}
+document.getElementById('nlParseBtn').onclick = ()=>{
+  const raw = document.getElementById('nlQuickAdd').value.trim();
+  const hint = document.getElementById('nlParseHint');
+  if(!raw){ hint.textContent='Type something first — e.g. "guitar tomorrow 5pm".'; hint.style.color='var(--rust)'; return; }
+  const parsed = nlParseEntry(raw);
+  if(!parsed){ hint.textContent="Couldn't find a time in that — try including something like \"5pm\" or \"17:00\"."; hint.style.color='var(--rust)'; return; }
+  document.getElementById('fTitle').value = parsed.title;
+  document.getElementById('fDay').value = String(parsed.day);
+  document.getElementById('fStart').value = parsed.start;
+  document.getElementById('fEnd').value = parsed.end;
+  hint.textContent = `Parsed: ${parsed.title} · ${DAY_NAMES[parsed.day]} · ${parsed.start}–${parsed.end}. Check the fields below and save.`;
+  hint.style.color = 'var(--teal)';
+};
+document.getElementById('nlQuickAdd').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('nlParseBtn').click(); } });
 
 // ---------- intro splash ----------
 (function introDismiss(){
