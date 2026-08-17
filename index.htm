@@ -543,9 +543,8 @@
     <div class="topbar-right">
       <span id="userBadge"></span>
       <button class="pill-btn" id="alertBtn">Enable alerts</button>
-      <button class="icon-btn" id="globalSearchBtn" title="Search everything">⌕</button>
+      <button class="icon-btn" id="exportBtn" title="Export your data">⬇</button>
       <button class="icon-btn" id="notifSettingsBtn" title="Notification settings">⚙</button>
-      <button class="icon-btn" id="exportBtn" title="Export your data">⇩</button>
       <button class="icon-btn" id="themeBtn" title="Toggle theme">☾</button>
       <button class="icon-btn" id="logoutBtn" title="Sign out">⎋</button>
     </div>
@@ -1021,17 +1020,6 @@
   <p class="streak-caption" style="text-align:left; margin-bottom:20px;">Everything — schedule, todos, habit history, streaks, deadlines. Yours to keep.</p>
   <button class="pill-btn" id="exportJsonBtn" style="width:100%; margin-bottom:10px;">Download JSON ↓</button>
   <button class="pill-btn" id="exportPdfBtn" style="width:100%;">Download PDF ↓</button>
-</div>
-
-<!-- GLOBAL SEARCH -->
-<div class="modal-overlay" id="globalSearchOverlay" onclick="if(event.target===this)globalSearchClose()" style="align-items:flex-start; padding-top:14vh;">
-  <div class="modal" style="width:min(560px,92vw); border-radius:2px; text-align:left;">
-    <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:14px;">
-      <span style="opacity:.4;">⌕</span>
-      <input id="globalSearchInp" placeholder="Search schedule, todos, group tasks…" style="flex:1; background:none; border:none; outline:none; font-family:'Jost'; font-size:15px; color:var(--fg);">
-    </div>
-    <div id="globalSearchResults" style="max-height:52vh; overflow-y:auto;"></div>
-  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -2655,57 +2643,6 @@ document.getElementById('exportPdfBtn').onclick = async ()=>{
   w.document.close(); w.focus(); w.print();
   showToast('PDF print dialog opened ↓');
 };
-
-// ================= GLOBAL SEARCH (additive) =================
-function globalSearchOpen(){
-  document.getElementById('globalSearchOverlay').classList.add('open');
-  document.getElementById('globalSearchInp').value='';
-  document.getElementById('globalSearchResults').innerHTML='';
-  setTimeout(()=>document.getElementById('globalSearchInp').focus(),50);
-}
-function globalSearchClose(){ document.getElementById('globalSearchOverlay').classList.remove('open'); }
-document.getElementById('globalSearchBtn').onclick = globalSearchOpen;
-document.addEventListener('keydown', e=>{
-  if((e.metaKey||e.ctrlKey) && e.key==='k'){ e.preventDefault(); globalSearchOpen(); }
-  if(e.key==='Escape') globalSearchClose();
-});
-let _groupTodoCache = null;
-async function globalSearchRun(q){
-  const el = document.getElementById('globalSearchResults');
-  if(!q.trim()){ el.innerHTML=''; return; }
-  const ql = q.trim().toLowerCase();
-  if(_groupTodoCache===null){
-    const { data } = await sb.from('group_todos').select('*, groups(name)');
-    _groupTodoCache = data||[];
-  }
-  const entryHits = entries.filter(e=>e.title.toLowerCase().includes(ql)||(e.location||'').toLowerCase().includes(ql));
-  const todoHits = (typeof todoTasks!=='undefined'?todoTasks:[]).filter(t=>t.text.toLowerCase().includes(ql));
-  const groupHits = _groupTodoCache.filter(t=>t.text.toLowerCase().includes(ql));
-  let html='';
-  if(entryHits.length){
-    html+=`<p class="streak-caption" style="text-align:left;">SCHEDULE</p>`;
-    entryHits.forEach(e=>{ html+=`<div class="entry gsr" data-kind="entry" data-day="${e.day}"><div class="entry-dot ${dotClass(e.type)}"></div><div class="entry-body"><div class="entry-title">${e.title}</div><div class="entry-sub">${DAY_SHORT[e.day]} · ${fmtTime(e.start)}${e.location?' · '+e.location:''}</div></div></div>`; });
-  }
-  if(todoHits.length){
-    html+=`<p class="streak-caption" style="text-align:left; margin-top:14px;">TODOS</p>`;
-    todoHits.forEach(t=>{ html+=`<div class="entry gsr" data-kind="todo"><div class="entry-dot" style="background:${t.done?'var(--teal)':'var(--brass)'}"></div><div class="entry-body"><div class="entry-title">${t.text}</div><div class="entry-sub">${t.done?'Done':'Pending'}</div></div></div>`; });
-  }
-  if(groupHits.length){
-    html+=`<p class="streak-caption" style="text-align:left; margin-top:14px;">GROUP TODOS</p>`;
-    groupHits.forEach(t=>{ html+=`<div class="entry gsr"><div class="entry-dot" style="background:${t.done?'var(--teal)':'var(--rust)'}"></div><div class="entry-body"><div class="entry-title">${t.text}</div><div class="entry-sub">${t.groups?.name||'Group'} · ${t.done?'Done':'Pending'}</div></div></div>`; });
-  }
-  if(!html) html = '<p class="empty-state" style="padding:20px 4px;">No matches.</p>';
-  el.innerHTML = html;
-  el.querySelectorAll('.gsr[data-kind="entry"]').forEach(row=>{
-    row.style.cursor='pointer';
-    row.onclick=()=>{ globalSearchClose(); switchToTab('schedule'); selectedDay=Number(row.dataset.day); render(); };
-  });
-  el.querySelectorAll('.gsr[data-kind="todo"]').forEach(row=>{
-    row.style.cursor='pointer';
-    row.onclick=()=>{ globalSearchClose(); switchToTab('todo'); };
-  });
-}
-document.getElementById('globalSearchInp').addEventListener('input', e=>globalSearchRun(e.target.value));
 
 // ================= NATURAL-LANGUAGE QUICK ADD (additive) =================
 function nlParseEntry(text){
