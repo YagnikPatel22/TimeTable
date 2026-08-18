@@ -168,6 +168,18 @@
   }
   .chk-row label{ margin:0; text-transform:none; font-family:'Jost'; font-size:13.5px; color:var(--fg); cursor:pointer; }
 
+  .theme-swatch-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .theme-swatch{
+    width:38px; height:38px; border-radius:50%; cursor:pointer; position:relative;
+    border:2px solid transparent; transition:all .18s ease; flex-shrink:0;
+  }
+  .theme-swatch:hover{transform:scale(1.08);}
+  .theme-swatch.active{border-color:var(--fg);}
+  .theme-swatch.active::after{
+    content:''; position:absolute; inset:0; margin:auto; width:8px; height:8px; border-radius:50%;
+    background:var(--bg); box-shadow:0 0 0 1px var(--bg);
+  }
+
   /* MAINTENANCE SCREEN */
   .maint-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
   .maint-card{width:100%; max-width:460px; text-align:center;}
@@ -901,11 +913,22 @@
 <div class="drawer-overlay" id="notifSettingsOverlay"></div>
 <div class="drawer" id="notifSettingsDrawer">
   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
-    <p class="section-title" style="margin:0;">Notification settings</p>
+    <p class="section-title" style="margin:0;">Settings</p>
     <button class="icon-btn" id="notifSettingsCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
   </div>
 
-  <p class="section-title" style="font-size:16px;">Quiet hours</p>
+  <p class="section-title" style="font-size:16px;">Appearance</p>
+  <p class="streak-caption" style="text-align:left; margin-bottom:14px;">Pick an accent color — it replaces brass across buttons, highlights, and the countdown line. Danger and success colors stay as they are, everywhere.</p>
+  <div class="theme-swatch-row" id="themeSwatchRow"></div>
+  <div class="field" style="margin-top:12px;">
+    <label>Custom hex</label>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <input type="color" id="customAccentPicker" style="width:44px; height:38px; padding:2px; border:1px solid var(--line); border-radius:2px; background:var(--paper-dim); cursor:pointer;">
+      <input type="text" id="customAccentHex" placeholder="#B8894F" style="flex:1; padding:10px 12px; border:1px solid var(--line); background:var(--paper-dim); color:var(--fg); font-family:'JetBrains Mono',monospace; font-size:13px; border-radius:2px; outline:none;">
+    </div>
+  </div>
+
+  <p class="section-title" style="font-size:16px; margin-top:28px;">Quiet hours</p>
   <p class="streak-caption" style="text-align:left; margin-bottom:14px;">Alerts stay silent during this window, unless an entry is marked "always notify."</p>
   <div class="row2">
     <div class="field"><label>Starts</label><input id="quietStart" type="time" value=""></div>
@@ -1008,6 +1031,19 @@
     <div class="field"><label>Due date</label><input id="dDate" type="date"></div>
   </div>
   <div class="field"><label>Notes (optional)</label><input id="dNotes" placeholder="Syllabus, chapters, portal link…"></div>
+  <div class="field">
+    <label>Remind me</label>
+    <select id="dRemind">
+      <option value="0">On the day</option>
+      <option value="1" selected>1 day before</option>
+      <option value="2">2 days before</option>
+      <option value="3">3 days before</option>
+      <option value="7">1 week before</option>
+      <option value="14">2 weeks before</option>
+      <option value="custom">Custom…</option>
+    </select>
+  </div>
+  <div class="field hidden" id="dRemindCustomBox"><label>Custom (days before)</label><input id="dRemindCustom" type="number" min="0" max="90" value="1"></div>
   <button class="save-btn" id="saveDeadlineBtn">Save deadline</button>
 </div>
 
@@ -1102,6 +1138,46 @@ async function notifShow(payload){
   if(Notification.permission==='granted') new Notification(payload.title, { body: payload.body });
 }
 
+// ---------- real push subscription (survives the browser being fully closed) ----------
+// The public key is safe to expose client-side by design — only the private key
+// (kept in the Edge Function, never sent to the browser) can actually sign pushes.
+const VAPID_PUBLIC_KEY = 'BFSNXbNOomSQ0eF4q4A6D0xxgfTqo5_zc7j20skVkjespiP5sKL2g7rypCwD97G9GJUKthF6eVjBX_MZI99ViJc';
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g,'+').replace(/_/g,'/');
+  const raw = atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++) arr[i]=raw.charCodeAt(i);
+  return arr;
+}
+async function subscribeToPush(){
+  if(!currentUser || !swReady || Notification.permission!=='granted') return;
+  const reg = await swReady;
+  if(!reg || !reg.pushManager) return;
+  try{
+    let sub = await reg.pushManager.getSubscription();
+    if(!sub){
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    const json = sub.toJSON();
+    await sb.from('push_subscriptions').upsert({
+      user_id: currentUser.id, endpoint: json.endpoint,
+      p256dh: json.keys.p256dh, auth: json.keys.auth
+    }, { onConflict: 'endpoint' });
+  }catch(e){
+    console.warn('Push subscription failed', e);
+  }
+}
+async function unsubscribeFromPush(){
+  if(!swReady) return;
+  const reg = await swReady;
+  const sub = reg && await reg.pushManager.getSubscription();
+  if(sub){ await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint); await sub.unsubscribe(); }
+}
+
 // ---------- maintenance mode ----------
 // Flip this to true, edit the message below if you want, then re-upload the file
 // to show everyone a maintenance screen instead of the app. Flip back to false
@@ -1174,6 +1250,7 @@ document.getElementById('authSubmit').onclick = async ()=>{
 };
 
 document.getElementById('logoutBtn').onclick = async ()=>{
+  await unsubscribeFromPush();
   await sb.auth.signOut();
 };
 
@@ -1472,16 +1549,33 @@ document.getElementById('notifSettingsBtn').onclick = async ()=>{
 function notifSettingsClose(){ notifSettingsOverlay.classList.remove('open'); notifSettingsDrawer.classList.remove('open'); }
 document.getElementById('notifSettingsCloseBtn').onclick = notifSettingsClose;
 notifSettingsOverlay.onclick = notifSettingsClose;
+document.getElementById('customAccentPicker').addEventListener('input', e=>{
+  const hex = e.target.value;
+  document.getElementById('customAccentHex').value = hex;
+  applyAccentColor(hex);
+  renderThemeSwatches(hex);
+});
+document.getElementById('customAccentHex').addEventListener('input', e=>{
+  const hex = e.target.value.trim();
+  if(/^#[0-9a-fA-F]{6}$/.test(hex)){
+    document.getElementById('customAccentPicker').value = hex;
+    applyAccentColor(hex);
+    renderThemeSwatches(hex);
+  }
+});
 document.getElementById('saveNotifSettings').onclick = async ()=>{
   const quiet_start = document.getElementById('quietStart').value || null;
   const quiet_end = document.getElementById('quietEnd').value || null;
   const morning_summary = document.getElementById('morningSummaryEnabled').checked;
   const morning_summary_time = document.getElementById('morningSummaryTime').value || '08:00';
-  const { error } = await sb.from('notification_settings').update({ quiet_start, quiet_end, morning_summary, morning_summary_time }).eq('user_id',currentUser.id);
+  let accent_color = document.getElementById('customAccentHex').value.trim() || '#B8894F';
+  if(!/^#[0-9a-fA-F]{6}$/.test(accent_color)) accent_color = '#B8894F';
+  const { error } = await sb.from('notification_settings').update({ quiet_start, quiet_end, morning_summary, morning_summary_time, accent_color }).eq('user_id',currentUser.id);
   if(error){ showToast('Could not save: '+error.message); return; }
-  notifSettings = {...notifSettings, quiet_start, quiet_end, morning_summary, morning_summary_time};
+  notifSettings = {...notifSettings, quiet_start, quiet_end, morning_summary, morning_summary_time, accent_color};
+  applyAccentColor(accent_color);
   notifSettingsClose();
-  showToast('Notification settings saved ✓');
+  showToast('Settings saved ✓');
 };
 
 // ---------- pomodoro ----------
@@ -1522,13 +1616,13 @@ document.getElementById('alertBtn').onclick = async ()=>{
   if(!('Notification' in window)){ showToast("This browser can't show notifications."); return; }
   const perm = await Notification.requestPermission();
   const btn = document.getElementById('alertBtn');
-  if(perm==='granted'){ btn.textContent='Alerts on'; btn.classList.add('on'); showToast('Alerts enabled — keep this tab open.'); }
+  if(perm==='granted'){ btn.textContent='Alerts on'; btn.classList.add('on'); showToast('Alerts enabled — including when the app is closed.'); subscribeToPush(); }
   else{ showToast('Alerts blocked in browser settings.'); }
 };
 function notifSyncButtonToPermission(){
   const btn = document.getElementById('alertBtn');
   if(!('Notification' in window)) return;
-  if(Notification.permission==='granted'){ btn.textContent='Alerts on'; btn.classList.add('on'); }
+  if(Notification.permission==='granted'){ btn.textContent='Alerts on'; btn.classList.add('on'); subscribeToPush(); }
   else{ btn.textContent='Enable alerts'; btn.classList.remove('on'); }
 }
 // Auto-prompt on the very first genuine click anywhere in the app, so most people
@@ -1541,12 +1635,12 @@ function notifArmAutoPrompt(){
     unlockAudio();
     const perm = await Notification.requestPermission();
     notifSyncButtonToPermission();
-    if(perm==='granted') showToast('Alerts enabled — keep this tab open.');
+    if(perm==='granted'){ showToast('Alerts enabled — including when the app is closed.'); subscribeToPush(); }
   };
   document.addEventListener('click', handler, { once:true });
 }
 let notifSnoozeUntil = {}; // entryId -> timestamp ms
-let notifSettings = { quiet_start:null, quiet_end:null, morning_summary:true, morning_summary_time:'08:00', last_summary_date:null };
+let notifSettings = { quiet_start:null, quiet_end:null, morning_summary:true, morning_summary_time:'08:00', last_summary_date:null, accent_color:'#B8894F' };
 
 function notifInQuietHours(){
   if(!notifSettings.quiet_start || !notifSettings.quiet_end) return false;
@@ -1561,6 +1655,28 @@ function notifSnoozeEntry(entryId){
   notifSnoozeUntil[entryId] = Date.now() + 5*60000;
   showToast("Snoozed — I'll remind you again in 5 min.");
 }
+const THEME_SWATCHES = ['#B8894F','#A64B3B','#4B7A74','#7C5CBF','#3E6FA6','#B85C7A','#6B7A3F','#8C8C8C'];
+function applyAccentColor(hex){
+  if(!hex) return;
+  document.documentElement.style.setProperty('--brass', hex);
+}
+function renderThemeSwatches(activeHex){
+  const el = document.getElementById('themeSwatchRow');
+  el.innerHTML='';
+  THEME_SWATCHES.forEach(hex=>{
+    const b = document.createElement('button');
+    b.className = 'theme-swatch'+(activeHex && activeHex.toLowerCase()===hex.toLowerCase() ? ' active' : '');
+    b.style.background = hex;
+    b.title = hex;
+    b.onclick = ()=>{
+      applyAccentColor(hex);
+      document.getElementById('customAccentHex').value = hex;
+      document.getElementById('customAccentPicker').value = hex;
+      renderThemeSwatches(hex);
+    };
+    el.appendChild(b);
+  });
+}
 async function notifLoadSettings(){
   if(!currentUser) return;
   const { data } = await sb.from('notification_settings').select('*').eq('user_id',currentUser.id).maybeSingle();
@@ -1573,6 +1689,11 @@ async function notifLoadSettings(){
   document.getElementById('quietEnd').value = notifSettings.quiet_end||'';
   document.getElementById('morningSummaryEnabled').checked = notifSettings.morning_summary;
   document.getElementById('morningSummaryTime').value = notifSettings.morning_summary_time||'08:00';
+  const accent = notifSettings.accent_color || '#B8894F';
+  applyAccentColor(accent);
+  renderThemeSwatches(accent);
+  document.getElementById('customAccentHex').value = accent;
+  document.getElementById('customAccentPicker').value = accent;
 }
 async function checkMorningSummary(){
   if(!currentUser || !notifSettings.morning_summary) return;
@@ -1616,6 +1737,27 @@ function checkNotifications(){
     }
   });
   checkMorningSummary();
+  checkDeadlineReminders();
+}
+let notifiedDeadlines = {};
+function checkDeadlineReminders(){
+  if(typeof deadlines==='undefined' || !deadlines.length) return;
+  const todayKey = todayString();
+  deadlines.forEach(d=>{
+    const remindDays = d.remind_days_before ?? 1;
+    const daysUntil = deadlineDaysUntil(d.due_date);
+    const key = d.id+'_'+todayKey;
+    if(daysUntil===remindDays && !notifiedDeadlines[key]){
+      notifiedDeadlines[key] = true;
+      beep();
+      notifShow({
+        title: deadlineTypeLabel(d.type)+': '+d.title,
+        body: daysUntil===0 ? 'Due today' : `Due in ${daysUntil} day${daysUntil===1?'':'s'} · ${fmtYMDDate(d.due_date)}`,
+        tag: 'deadline-'+d.id
+      });
+      showToast(d.title+' — due '+(daysUntil===0?'today':'in '+daysUntil+'d'));
+    }
+  });
 }
 
 
@@ -2513,7 +2655,7 @@ function deadlineRender(){
       <div class="entry-dot" style="background:${deadlineTypeColor(d.type)}"></div>
       <div class="entry-body">
         <div class="entry-title">${d.title}</div>
-        <div class="entry-sub">${deadlineTypeLabel(d.type)} · ${fmtYMDDate(d.due_date)}${d.notes?' · '+d.notes:''}</div>
+        <div class="entry-sub">${deadlineTypeLabel(d.type)} · ${fmtYMDDate(d.due_date)}${d.notes?' · '+d.notes:''} · reminds ${d.remind_days_before===0?'on the day':d.remind_days_before+'d before'}</div>
       </div>
       <div class="entry-actions">
         <button title="Edit" data-id="${d.id}" class="editDeadlineBtn">✎</button>
@@ -2528,12 +2670,22 @@ function deadlineRender(){
 }
 function fmtYMDDate(iso){ const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
 
+function deadlineSetRemindField(days){
+  const opts = ['0','1','2','3','7','14'];
+  const val = days===null||days===undefined ? '1' : String(days);
+  if(opts.includes(val)){ document.getElementById('dRemind').value=val; document.getElementById('dRemindCustomBox').classList.add('hidden'); }
+  else{ document.getElementById('dRemind').value='custom'; document.getElementById('dRemindCustom').value=val; document.getElementById('dRemindCustomBox').classList.remove('hidden'); }
+}
+document.getElementById('dRemind').addEventListener('change', e=>{
+  document.getElementById('dRemindCustomBox').classList.toggle('hidden', e.target.value!=='custom');
+});
 function deadlineOpenNew(){
   editingDeadlineId=null;
   document.getElementById('deadlineDrawerTitle').textContent='New deadline';
   document.getElementById('saveDeadlineBtn').textContent='Save deadline';
   document.getElementById('dTitle').value=''; document.getElementById('dType').value='exam';
   document.getElementById('dDate').value=todayString(); document.getElementById('dNotes').value='';
+  deadlineSetRemindField(1);
   document.getElementById('deadlineOverlay').classList.add('open');
   document.getElementById('deadlineDrawer').classList.add('open');
 }
@@ -2543,6 +2695,7 @@ function deadlineOpenEdit(d){
   document.getElementById('saveDeadlineBtn').textContent='Update deadline';
   document.getElementById('dTitle').value=d.title; document.getElementById('dType').value=d.type;
   document.getElementById('dDate').value=d.due_date; document.getElementById('dNotes').value=d.notes||'';
+  deadlineSetRemindField(d.remind_days_before);
   document.getElementById('deadlineOverlay').classList.add('open');
   document.getElementById('deadlineDrawer').classList.add('open');
 }
@@ -2557,7 +2710,9 @@ document.getElementById('saveDeadlineBtn').onclick = async ()=>{
   const title = document.getElementById('dTitle').value.trim();
   const due_date = document.getElementById('dDate').value;
   if(!title || !due_date){ showToast('Give it a title and a date.'); return; }
-  const fields = { title, type:document.getElementById('dType').value, due_date, notes:document.getElementById('dNotes').value.trim() };
+  const remindSel = document.getElementById('dRemind').value;
+  const remind_days_before = remindSel==='custom' ? (Number(document.getElementById('dRemindCustom').value)||0) : Number(remindSel);
+  const fields = { title, type:document.getElementById('dType').value, due_date, notes:document.getElementById('dNotes').value.trim(), remind_days_before };
   let error;
   if(editingDeadlineId){ ({ error } = await sb.from('deadlines').update(fields).eq('id',editingDeadlineId)); }
   else{ ({ error } = await sb.from('deadlines').insert({ ...fields, user_id:currentUser.id })); }
