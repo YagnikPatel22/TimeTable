@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <style>
   :root{
     --ink:#121212; --paper:#F6F1E7; --paper-dim:#ECE3D2;
@@ -566,6 +567,7 @@
     <button class="pill-btn on" id="tabScheduleBtn">Schedule</button>
     <button class="pill-btn" id="tabTodoBtn">Todos</button>
     <button class="pill-btn" id="tabDeadlinesBtn">Deadlines</button>
+    <button class="pill-btn" id="tabExamsBtn">Exams</button>
   </div>
 
   <div id="scheduleView">
@@ -857,11 +859,28 @@
       <div class="hero-grid" id="deadlineHeroContent"><p class="hero-empty">No deadlines yet — add your first one.</p></div>
       <div class="hero-line" id="deadlineHeroLine" style="width:0%"></div>
     </div>
-    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-top:44px; margin-bottom:16px;">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-top:44px; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
       <p class="section-title" style="margin:0;">Upcoming</p>
       <button class="pill-btn" id="addDeadlineBtn">+ Add deadline</button>
     </div>
     <div class="agenda" id="deadlinesList"></div>
+  </div>
+
+  <div id="examsView" class="hidden">
+    <div class="hero" id="examHero">
+      <p class="hero-eyebrow">Next exam</p>
+      <div class="hero-grid" id="examHeroContent"><p class="hero-empty">No exams yet — add one or import a timetable PDF.</p></div>
+      <div class="hero-line" id="examHeroLine" style="width:0%"></div>
+    </div>
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-top:44px; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+      <p class="section-title" style="margin:0;">Upcoming</p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="pill-btn" id="importExamPdfBtn">Import from PDF →</button>
+        <input type="file" id="examPdfInput" accept="application/pdf" class="hidden">
+        <button class="pill-btn" id="addExamBtn">+ Add exam</button>
+      </div>
+    </div>
+    <div class="agenda" id="examsList"></div>
   </div>
 
   <p style="text-align:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:56px; letter-spacing:.03em;">Made by Yagnik N. ❤️</p>
@@ -1047,6 +1066,53 @@
   <button class="save-btn" id="saveDeadlineBtn">Save deadline</button>
 </div>
 
+<div class="drawer-overlay" id="examOverlay"></div>
+<div class="drawer" id="examDrawer">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <p class="section-title" id="examDrawerTitle" style="margin:0;">New exam</p>
+    <button class="icon-btn" id="examCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+  </div>
+  <div class="row2">
+    <div class="field"><label>Course code</label><input id="exCode" placeholder="e.g. IT305"></div>
+    <div class="field"><label>Course name</label><input id="exName" placeholder="e.g. Computer Networks"></div>
+  </div>
+  <div class="row2">
+    <div class="field"><label>Date</label><input id="exDate" type="date"></div>
+    <div class="field"><label>Time (24h, optional)</label><input id="exTime" type="time"></div>
+  </div>
+  <div class="field"><label>Location (optional)</label><input id="exLoc" placeholder="e.g. LT-2 / Exam Hall B"></div>
+  <div class="field"><label>Notes (optional)</label><input id="exNotes" placeholder="Syllabus, seat number…"></div>
+  <div class="field">
+    <label>Remind me</label>
+    <select id="exRemind">
+      <option value="0">On the day</option>
+      <option value="1" selected>1 day before</option>
+      <option value="2">2 days before</option>
+      <option value="3">3 days before</option>
+      <option value="7">1 week before</option>
+      <option value="14">2 weeks before</option>
+      <option value="custom">Custom…</option>
+    </select>
+  </div>
+  <div class="field hidden" id="exRemindCustomBox"><label>Custom (days before)</label><input id="exRemindCustom" type="number" min="0" max="90" value="1"></div>
+  <button class="save-btn" id="saveExamBtn">Save exam</button>
+</div>
+
+<div class="modal-overlay" id="examPdfOverlay">
+  <div class="modal" style="width:min(640px,94vw); border-radius:2px; text-align:left; max-height:82vh; overflow-y:auto;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+      <p class="modal-title" style="margin:0;">Review parsed exams</p>
+      <button class="icon-btn" id="examPdfCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+    </div>
+    <p class="modal-sub" id="examPdfSub">Check each row — PDF layouts vary, so double-check before adding.</p>
+    <div id="examPdfRows"></div>
+    <div style="display:flex; gap:10px; margin-top:18px;">
+      <button class="modal-cancel" id="examPdfCancelBtn" style="flex:1;">Cancel</button>
+      <button class="save-btn" id="examPdfConfirmBtn" style="flex:1; margin-top:0;">Add exams</button>
+    </div>
+  </div>
+</div>
+
 <div class="drawer-overlay" id="exportOverlay"></div>
 <div class="drawer" id="exportDrawer">
   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
@@ -1141,7 +1207,7 @@ async function notifShow(payload){
 // ---------- real push subscription (survives the browser being fully closed) ----------
 // The public key is safe to expose client-side by design — only the private key
 // (kept in the Edge Function, never sent to the browser) can actually sign pushes.
-const VAPID_PUBLIC_KEY = 'BFSNXbNOomSQ0eF4q4A6D0xxgfTqo5_zc7j20skVkjespiP5sKL2g7rypCwD97G9GJUKthF6eVjBX_MZI99ViJc';
+const VAPID_PUBLIC_KEY = 'BB0H558juI3FFWotZNjSy8U7JaJ8CYSKHPfLnjLo0G6CbqH27t_bV00JSwtFeSH_OEzBLqfAXkOKAP17Ae3ngxc';
 function urlBase64ToUint8Array(base64String){
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g,'+').replace(/_/g,'/');
@@ -1271,6 +1337,7 @@ sb.auth.onAuthStateChange((event, session)=>{
     notifLoadSettings();
     grpAutoAcceptFromURL();
     deadlineLoadAll();
+    examLoadAll();
   } else {
     currentUser = null;
     document.getElementById('authScreen').classList.remove('hidden');
@@ -1738,6 +1805,27 @@ function checkNotifications(){
   });
   checkMorningSummary();
   checkDeadlineReminders();
+  checkExamReminders();
+}
+let notifiedExams = {};
+function checkExamReminders(){
+  if(typeof exams==='undefined' || !exams.length) return;
+  const todayKey = todayString();
+  exams.forEach(x=>{
+    const remindDays = x.remind_days_before ?? 1;
+    const daysUntil = deadlineDaysUntil(x.exam_date);
+    const key = x.id+'_'+todayKey;
+    if(daysUntil===remindDays && !notifiedExams[key]){
+      notifiedExams[key] = true;
+      beep();
+      notifShow({
+        title: 'Exam: '+(x.course_code?x.course_code+' — ':'')+x.course_name,
+        body: (daysUntil===0 ? 'Today' : `In ${daysUntil} day${daysUntil===1?'':'s'}`)+` · ${fmtYMDDate(x.exam_date)}`+(x.exam_time?' · '+fmtHM(x.exam_time):'')+(x.location?' · '+x.location:''),
+        tag: 'exam-'+x.id
+      });
+      showToast((x.course_code||x.course_name)+' — exam '+(daysUntil===0?'today':'in '+daysUntil+'d'));
+    }
+  });
 }
 let notifiedDeadlines = {};
 function checkDeadlineReminders(){
@@ -1759,6 +1847,261 @@ function checkDeadlineReminders(){
     }
   });
 }
+
+// ================= EXAMS (additive) =================
+let exams = [];
+let editingExamId = null;
+
+async function examLoadAll(){
+  if(!currentUser) return;
+  const { data, error } = await sb.from('exams').select('*').order('exam_date');
+  if(error){ showToast('Could not load exams: '+error.message); return; }
+  exams = data||[];
+  if(!document.getElementById('examsView').classList.contains('hidden')) examRender();
+}
+function examDaysUntil(dateStr){ return deadlineDaysUntil(dateStr); }
+function fmtHM(t){ if(!t) return ''; const [h,m]=t.split(':'); return h+':'+m; }
+
+function examRender(){
+  const upcoming = exams.filter(e=>e.exam_date>=todayString())
+    .sort((a,b)=> a.exam_date===b.exam_date ? (a.exam_time||'').localeCompare(b.exam_time||'') : a.exam_date.localeCompare(b.exam_date));
+  const heroBox = document.getElementById('examHeroContent');
+  const heroLine = document.getElementById('examHeroLine');
+  if(!upcoming.length){
+    heroBox.innerHTML = '<p class="hero-empty">No exams yet — add one or import a timetable PDF.</p>';
+    heroLine.style.width='0%';
+  } else {
+    const next = upcoming[0];
+    const days = examDaysUntil(next.exam_date);
+    const big = days===0 ? 'Today' : days===1 ? 'Tomorrow' : days+'d';
+    heroBox.innerHTML = `<div><span class="hero-number">${big}</span></div>
+      <div class="hero-detail"><p class="hero-title">${next.course_code?next.course_code+' — ':''}${next.course_name}</p>
+      <p class="hero-meta">${fmtYMDDate(next.exam_date)}${next.exam_time?' · '+fmtHM(next.exam_time):''}${next.location?' · '+next.location:''}</p></div>`;
+    heroLine.style.width = Math.max(4, 100-Math.min(100,days*4))+'%';
+  }
+  const list = document.getElementById('examsList');
+  list.innerHTML='';
+  if(!upcoming.length){ list.innerHTML='<p class="empty-state">Nothing scheduled yet.</p>'; return; }
+  upcoming.forEach(x=>{
+    const days = examDaysUntil(x.exam_date);
+    const daysLbl = days===0?'Today':days===1?'Tomorrow':days+'d away';
+    const row=document.createElement('div'); row.className='entry';
+    row.innerHTML = `
+      <div class="entry-time" style="width:74px;">${daysLbl}</div>
+      <div class="entry-dot" style="background:var(--rust)"></div>
+      <div class="entry-body">
+        <div class="entry-title">${x.course_code?x.course_code+' — ':''}${x.course_name}</div>
+        <div class="entry-sub">${fmtYMDDate(x.exam_date)}${x.exam_time?' · '+fmtHM(x.exam_time):''}${x.location?' · '+x.location:''}${x.notes?' · '+x.notes:''}</div>
+      </div>
+      <div class="entry-actions">
+        <button title="Edit" data-id="${x.id}" class="editExamBtn">✎</button>
+        <button title="Delete" data-id="${x.id}" class="delExamBtn">✕</button>
+      </div>`;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('.delExamBtn').forEach(b=>b.onclick=()=>examDelete(b.dataset.id));
+  list.querySelectorAll('.editExamBtn').forEach(b=>b.onclick=()=>{
+    const x = exams.find(v=>v.id===b.dataset.id); if(x) examOpenEdit(x);
+  });
+}
+function examSetRemindField(days){
+  const opts = ['0','1','2','3','7','14'];
+  const val = days===null||days===undefined ? '1' : String(days);
+  if(opts.includes(val)){ document.getElementById('exRemind').value=val; document.getElementById('exRemindCustomBox').classList.add('hidden'); }
+  else{ document.getElementById('exRemind').value='custom'; document.getElementById('exRemindCustom').value=val; document.getElementById('exRemindCustomBox').classList.remove('hidden'); }
+}
+document.getElementById('exRemind').addEventListener('change', e=>{
+  document.getElementById('exRemindCustomBox').classList.toggle('hidden', e.target.value!=='custom');
+});
+function examOpenNew(){
+  editingExamId=null;
+  document.getElementById('examDrawerTitle').textContent='New exam';
+  document.getElementById('saveExamBtn').textContent='Save exam';
+  document.getElementById('exCode').value=''; document.getElementById('exName').value='';
+  document.getElementById('exDate').value=todayString(); document.getElementById('exTime').value='';
+  document.getElementById('exLoc').value=''; document.getElementById('exNotes').value='';
+  examSetRemindField(1);
+  document.getElementById('examOverlay').classList.add('open');
+  document.getElementById('examDrawer').classList.add('open');
+}
+function examOpenEdit(x){
+  editingExamId=x.id;
+  document.getElementById('examDrawerTitle').textContent='Edit exam';
+  document.getElementById('saveExamBtn').textContent='Update exam';
+  document.getElementById('exCode').value=x.course_code||''; document.getElementById('exName').value=x.course_name;
+  document.getElementById('exDate').value=x.exam_date; document.getElementById('exTime').value=x.exam_time||'';
+  document.getElementById('exLoc').value=x.location||''; document.getElementById('exNotes').value=x.notes||'';
+  examSetRemindField(x.remind_days_before);
+  document.getElementById('examOverlay').classList.add('open');
+  document.getElementById('examDrawer').classList.add('open');
+}
+function examClose(){
+  document.getElementById('examOverlay').classList.remove('open');
+  document.getElementById('examDrawer').classList.remove('open');
+}
+document.getElementById('addExamBtn').onclick = examOpenNew;
+document.getElementById('examCloseBtn').onclick = examClose;
+document.getElementById('examOverlay').onclick = examClose;
+document.getElementById('saveExamBtn').onclick = async ()=>{
+  const course_name = document.getElementById('exName').value.trim();
+  const exam_date = document.getElementById('exDate').value;
+  if(!course_name || !exam_date){ showToast('Give it a course name and a date.'); return; }
+  const remindSel = document.getElementById('exRemind').value;
+  const remind_days_before = remindSel==='custom' ? (Number(document.getElementById('exRemindCustom').value)||0) : Number(remindSel);
+  const fields = {
+    course_code: document.getElementById('exCode').value.trim() || null,
+    course_name, exam_date,
+    exam_time: document.getElementById('exTime').value || null,
+    location: document.getElementById('exLoc').value.trim() || null,
+    notes: document.getElementById('exNotes').value.trim() || null,
+    remind_days_before
+  };
+  let error;
+  if(editingExamId){ ({ error } = await sb.from('exams').update(fields).eq('id',editingExamId)); }
+  else{ ({ error } = await sb.from('exams').insert({ ...fields, user_id:currentUser.id })); }
+  if(error){ showToast('Could not save: '+error.message); return; }
+  examClose(); showToast(editingExamId?'Exam updated ✓':'Exam added ✓');
+  examLoadAll();
+};
+async function examDelete(id){
+  if(!confirm('Delete this exam?')) return;
+  const { error } = await sb.from('exams').delete().eq('id',id);
+  if(error){ showToast('Could not delete: '+error.message); return; }
+  showToast('Exam deleted'); examLoadAll();
+}
+
+// ---- PDF import: extract text with pdf.js, then a lightweight pattern parser ----
+if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+async function extractPdfText(file){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  let lines = [];
+  for(let p=1; p<=pdf.numPages; p++){
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    // group items roughly by their vertical position so a table row stays one line
+    const rows = {};
+    content.items.forEach(item=>{
+      const y = Math.round(item.transform[5]/3)*3;
+      if(!rows[y]) rows[y] = [];
+      rows[y].push(item.str);
+    });
+    Object.keys(rows).sort((a,b)=>b-a).forEach(y=>{
+      const line = rows[y].join(' ').replace(/\s+/g,' ').trim();
+      if(line) lines.push(line);
+    });
+  }
+  return lines;
+}
+
+const MONTHS = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function examLookupCourseName(code){
+  if(!code || typeof entries==='undefined') return null;
+  const norm = code.replace(/\s/g,'').toUpperCase();
+  for(const e of entries){
+    const m = e.title.match(/^([A-Z]{2,6}\d{2,4})/i);
+    if(m && m[1].replace(/\s/g,'').toUpperCase()===norm){
+      // strip the leading "CODE — " / "CODE - " prefix so we keep just the subject name
+      return e.title.replace(/^[A-Z]{2,6}\d{2,4}\s*[—\-–]\s*/i,'').trim() || e.title;
+    }
+  }
+  return null;
+}
+function parseExamLine(line){
+  const codeMatch = line.match(/\b([A-Z]{2,5}[- ]?\d{2,4})\b/);
+  let date = null;
+  let m;
+  if(m = line.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})\b/)){
+    date = `${m[3]}-${String(m[2]).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+  } else if(m = line.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})[,]?\s+(\d{4})\b/)){
+    const mo = MONTHS[m[2].toLowerCase().slice(0,3)];
+    if(mo) date = `${m[3]}-${String(mo).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+  } else if(m = line.match(/\b([A-Za-z]{3,9})\s+(\d{1,2})[,]?\s+(\d{4})\b/)){
+    const mo = MONTHS[m[1].toLowerCase().slice(0,3)];
+    if(mo) date = `${m[3]}-${String(mo).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}`;
+  }
+  let time = null;
+  if(m = line.match(/\b(\d{1,2}):(\d{2})\s*(am|pm|AM|PM)?\b/)){
+    let h = Number(m[1]); const min = m[2]; const ap = (m[3]||'').toLowerCase();
+    if(ap==='pm' && h<12) h+=12; if(ap==='am' && h===12) h=0;
+    time = String(h).padStart(2,'0')+':'+min;
+  }
+  if(!codeMatch && !date) return null;
+  const rawCode = codeMatch ? codeMatch[1].replace(/\s/g,'') : '';
+  const knownName = examLookupCourseName(rawCode);
+  let name = knownName;
+  if(!name){
+    name = line;
+    if(codeMatch) name = name.replace(codeMatch[0],'');
+    name = name.replace(/\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{4}/,'')
+               .replace(/\d{1,2}:\d{2}\s*(am|pm|AM|PM)?/,'')
+               .replace(/\b(exam|examination|date|time|room|venue|course)\b[:\-]?/gi,'')
+               .replace(/[|,;:\-–]+/g,' ').replace(/\s+/g,' ').trim();
+  }
+  return { course_code: rawCode, course_name: name||'(edit course name)', exam_date: date, exam_time: time, matched_from_timetable: !!knownName };
+}
+let pendingExamRows = [];
+function examPdfRenderRows(){
+  const el = document.getElementById('examPdfRows');
+  el.innerHTML='';
+  if(!pendingExamRows.length){ el.innerHTML='<p class="empty-state" style="padding:20px 4px;">Nothing recognizable found in that PDF — try adding exams manually instead.</p>'; return; }
+  pendingExamRows.forEach((r,i)=>{
+    const row = document.createElement('div');
+    row.style.cssText='border:1px solid var(--line); border-radius:2px; padding:14px; margin-bottom:10px;';
+    row.innerHTML = `
+      ${r.matched_from_timetable?`<p class="streak-caption" style="text-align:left; color:var(--teal); margin-bottom:8px;">✓ matched to your timetable</p>`:''}
+      <div class="row2" style="margin-bottom:10px;">
+        <div class="field" style="margin-bottom:0;"><label>Course code</label><input data-i="${i}" data-f="course_code" value="${r.course_code||''}"></div>
+        <div class="field" style="margin-bottom:0;"><label>Course name</label><input data-i="${i}" data-f="course_name" value="${r.course_name||''}"></div>
+      </div>
+      <div class="row2">
+        <div class="field" style="margin-bottom:0;"><label>Date</label><input type="date" data-i="${i}" data-f="exam_date" value="${r.exam_date||''}"></div>
+        <div class="field" style="margin-bottom:0;"><label>Time</label><input type="time" data-i="${i}" data-f="exam_time" value="${r.exam_time||''}"></div>
+      </div>
+      <button class="habit-del" data-remove="${i}" style="margin-top:8px;">Remove row</button>`;
+    el.appendChild(row);
+  });
+  el.querySelectorAll('input[data-i]').forEach(inp=>{
+    inp.addEventListener('input', e=>{ pendingExamRows[e.target.dataset.i][e.target.dataset.f] = e.target.value; });
+  });
+  el.querySelectorAll('[data-remove]').forEach(btn=>{
+    btn.onclick=()=>{ pendingExamRows.splice(Number(btn.dataset.remove),1); examPdfRenderRows(); };
+  });
+}
+document.getElementById('importExamPdfBtn').onclick = ()=>document.getElementById('examPdfInput').click();
+document.getElementById('examPdfInput').addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  showToast('Reading PDF…');
+  try{
+    const lines = await extractPdfText(file);
+    pendingExamRows = lines.map(parseExamLine).filter(Boolean);
+    document.getElementById('examPdfSub').textContent = pendingExamRows.length
+      ? `Found ${pendingExamRows.length} possible exam${pendingExamRows.length===1?'':'s'} — check each before adding.`
+      : 'Check each row — PDF layouts vary, so double-check before adding.';
+    examPdfRenderRows();
+    document.getElementById('examPdfOverlay').classList.add('open');
+  }catch(err){
+    showToast('Could not read that PDF: '+err.message);
+  }
+  e.target.value='';
+});
+function examPdfClose(){ document.getElementById('examPdfOverlay').classList.remove('open'); }
+document.getElementById('examPdfCloseBtn').onclick = examPdfClose;
+document.getElementById('examPdfCancelBtn').onclick = examPdfClose;
+document.getElementById('examPdfOverlay').onclick = e=>{ if(e.target.id==='examPdfOverlay') examPdfClose(); };
+document.getElementById('examPdfConfirmBtn').onclick = async ()=>{
+  const valid = pendingExamRows.filter(r=>r.course_name && r.exam_date);
+  if(!valid.length){ showToast('Fill in at least a course name and date for one row.'); return; }
+  const rows = valid.map(r=>({
+    user_id: currentUser.id, course_code: r.course_code||null, course_name: r.course_name,
+    exam_date: r.exam_date, exam_time: r.exam_time||null, remind_days_before: 1
+  }));
+  const { error } = await sb.from('exams').insert(rows);
+  if(error){ showToast('Could not save: '+error.message); return; }
+  examPdfClose(); showToast(`Added ${rows.length} exam${rows.length===1?'':'s'} ✓`);
+  examLoadAll();
+};
 
 
 
@@ -2297,11 +2640,14 @@ function switchToTab(tab){
   document.getElementById('scheduleView').classList.toggle('hidden', tab!=='schedule');
   document.getElementById('todoView').classList.toggle('hidden', tab!=='todo');
   document.getElementById('deadlinesView').classList.toggle('hidden', tab!=='deadlines');
+  document.getElementById('examsView').classList.toggle('hidden', tab!=='exams');
   document.getElementById('tabScheduleBtn').classList.toggle('on', tab==='schedule');
   document.getElementById('tabTodoBtn').classList.toggle('on', tab==='todo');
   document.getElementById('tabDeadlinesBtn').classList.toggle('on', tab==='deadlines');
+  document.getElementById('tabExamsBtn').classList.toggle('on', tab==='exams');
   document.getElementById('fabBtn').classList.toggle('hidden', tab!=='schedule');
   if(tab==='deadlines') deadlineRender();
+  if(tab==='exams') examRender();
 }
 document.getElementById('tabScheduleBtn').onclick = ()=>{
   document.getElementById('scheduleView').classList.remove('hidden');
@@ -2311,6 +2657,8 @@ document.getElementById('tabScheduleBtn').onclick = ()=>{
   document.getElementById('fabBtn').classList.remove('hidden');
   document.getElementById('deadlinesView').classList.add('hidden');
   document.getElementById('tabDeadlinesBtn').classList.remove('on');
+  document.getElementById('examsView').classList.add('hidden');
+  document.getElementById('tabExamsBtn').classList.remove('on');
 };
 document.getElementById('tabTodoBtn').onclick = ()=>{
   document.getElementById('scheduleView').classList.add('hidden');
@@ -2320,8 +2668,11 @@ document.getElementById('tabTodoBtn').onclick = ()=>{
   document.getElementById('fabBtn').classList.add('hidden');
   document.getElementById('deadlinesView').classList.add('hidden');
   document.getElementById('tabDeadlinesBtn').classList.remove('on');
+  document.getElementById('examsView').classList.add('hidden');
+  document.getElementById('tabExamsBtn').classList.remove('on');
 };
 document.getElementById('tabDeadlinesBtn').onclick = ()=>switchToTab('deadlines');
+document.getElementById('tabExamsBtn').onclick = ()=>switchToTab('exams');
 
 // ================= SHARE LINKS (additive, read-only public views) =================
 function shareRandCode(len=8){ const chars='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<len;i++) s+=chars[Math.floor(Math.random()*chars.length)]; return s; }
@@ -2885,7 +3236,7 @@ document.getElementById('nlQuickAdd').addEventListener('keydown', e=>{ if(e.key=
   setInterval(()=>{ if(currentUser){ renderHero(); checkNotifications(); } }, 20000);
   setInterval(()=>{ if(currentUser) renderHero(); }, 1000*60);
   // light polling so a change made on another device shows up here within a minute
-  setInterval(()=>{ if(currentUser){ loadData(); todoLoadTasks(); } }, 60000);
+  setInterval(()=>{ if(currentUser){ loadData(); todoLoadTasks(); deadlineLoadAll(); examLoadAll(); } }, 60000);
 })();
 </script>
 </body>
