@@ -1098,18 +1098,21 @@
   <button class="save-btn" id="saveExamBtn">Save exam</button>
 </div>
 
-<div class="modal-overlay" id="examPdfOverlay">
-  <div class="modal" style="width:min(640px,94vw); border-radius:2px; text-align:left; max-height:82vh; overflow-y:auto;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-      <p class="modal-title" style="margin:0;">Review parsed exams</p>
-      <button class="icon-btn" id="examPdfCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
-    </div>
-    <p class="modal-sub" id="examPdfSub">Check each row — PDF layouts vary, so double-check before adding.</p>
-    <div id="examPdfRows"></div>
-    <div style="display:flex; gap:10px; margin-top:18px;">
-      <button class="modal-cancel" id="examPdfCancelBtn" style="flex:1;">Cancel</button>
-      <button class="save-btn" id="examPdfConfirmBtn" style="flex:1; margin-top:0;">Add exams</button>
-    </div>
+<div class="drawer-overlay" id="examPdfOverlay"></div>
+<div class="drawer" id="examPdfDrawer" style="width:min(640px,94vw);">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+    <p class="section-title" style="margin:0;">Review parsed exams</p>
+    <button class="icon-btn" id="examPdfCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+  </div>
+  <p class="streak-caption" id="examPdfSub" style="text-align:left; margin-bottom:16px;">Check each row — PDF layouts vary, so double-check before adding.</p>
+  <div id="examPdfQuickBox" class="hidden" style="margin-bottom:18px; padding:14px; border:1px solid var(--teal); border-radius:2px;">
+    <p class="streak-caption" id="examPdfQuickText" style="text-align:left; color:var(--teal); margin-bottom:10px;"></p>
+    <button class="pill-btn on" id="examPdfQuickAddBtn" style="width:100%;">Add matched exams automatically</button>
+  </div>
+  <div id="examPdfRows"></div>
+  <div style="display:flex; gap:10px; margin-top:18px; margin-bottom:20px;">
+    <button class="pill-btn" id="examPdfCancelBtn" style="flex:1;">Cancel</button>
+    <button class="save-btn" id="examPdfConfirmBtn" style="flex:1; margin-top:0;">Add remaining exams</button>
   </div>
 </div>
 
@@ -1677,6 +1680,21 @@ function beep(){
 function showToast(msg){
   const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(window._toastTimer); window._toastTimer = setTimeout(()=>t.classList.remove('show'), 3500);
+}
+// Wraps every "could not load X" error path so a clock-skew problem (the
+// Supabase-rejected-JWT error you can get when a device's date/time is wrong)
+// shows one clear, actionable message instead of a wall of cryptic ones.
+let clockSkewToastShown = false;
+function handleLoadError(context, error){
+  const msg = error?.message || '';
+  if(/issued at future|jwt/i.test(msg) && /future/i.test(msg)){
+    if(!clockSkewToastShown){
+      clockSkewToastShown = true;
+      showToast('Your device\u2019s clock looks wrong \u2014 fix it in Date & Time settings (turn on "Set automatically"), then reload.');
+    }
+    return;
+  }
+  showToast('Could not load '+context+': '+msg);
 }
 document.getElementById('alertBtn').onclick = async ()=>{
   unlockAudio();
