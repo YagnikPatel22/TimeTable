@@ -122,6 +122,27 @@
   .drawer-overlay{position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:30; opacity:0; pointer-events:none; transition:opacity .25s ease;}
   .drawer-overlay.open{opacity:1; pointer-events:auto;}
   .drawer{position:fixed; top:0; right:0; height:100%; width:min(420px,92vw); background:var(--bg); z-index:31; transform:translateX(100%); transition:transform .3s ease; padding:32px 28px; overflow-y:auto; border-left:1px solid var(--line);}
+
+  /* Global modal (used anywhere outside .todo-scope, e.g. the exam PDF review modal) */
+  .modal-overlay{position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(8px); display:flex; align-items:flex-end; justify-content:center; z-index:900; opacity:0; pointer-events:none; transition:opacity .25s; padding:16px;}
+  @media(min-width:600px){.modal-overlay{align-items:center;}}
+  .modal-overlay.open{opacity:1; pointer-events:auto;}
+  .modal{background:var(--bg); border:1px solid var(--line); border-radius:2px 2px 0 0; padding:24px; width:100%; max-width:520px; transform:translateY(30px); transition:transform .3s ease;}
+  @media(min-width:600px){.modal{border-radius:2px; transform:scale(.96) translateY(10px);}}
+  .modal-overlay.open .modal{transform:translateY(0);}
+  @media(min-width:600px){.modal-overlay.open .modal{transform:scale(1) translateY(0);}}
+  .modal-handle{width:36px; height:4px; background:var(--line); border-radius:2px; margin:0 auto 16px;}
+  @media(min-width:600px){.modal-handle{display:none;}}
+  .modal-title{font-family:'Cormorant Garamond',serif; font-style:italic; font-size:22px; color:var(--fg); margin-bottom:4px;}
+  .modal-sub{font-family:'Jost'; font-size:12.5px; color:var(--muted); margin-bottom:18px;}
+  .modal-cancel{width:100%; background:none; border:1px solid var(--line); border-radius:2px; padding:13px; font-family:'Jost'; font-size:14px; font-weight:500; color:var(--muted); cursor:pointer; transition:all .18s ease;}
+  .modal-cancel:hover{color:var(--fg); border-color:var(--brass);}
+
+  .habit-del{background:none; border:1px solid var(--line); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 12px; border-radius:2px; cursor:pointer; transition:all .18s ease;}
+  .habit-del:hover{color:var(--rust); border-color:var(--rust);}
+
+  /* Force 24-hour display on native time inputs where the browser allows it (WebKit/Safari) */
+  input[type="time"]::-webkit-datetime-edit-ampm-field{display:none;}
   .drawer.open{transform:translateX(0);}
   .field{margin-bottom:16px;}
   .field label{display:block; font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.05em; color:var(--muted); margin-bottom:6px; text-transform:uppercase;}
@@ -1191,6 +1212,19 @@ const SUPABASE_URL = 'https://urbxdarbprlhbebbxxuv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyYnhkYXJicHJsaGJlYmJ4eHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzMzY4NDAsImV4cCI6MjEwMTkxMjg0MH0.-s4SNuzQRLMfyCck8R46FARDcWL6Rg3OXYBy32SUEAU';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+let _clockSkewWarned = false;
+function showLoadError(prefix, error){
+  const msg = error?.message || String(error);
+  if(/jwt issued at future|clock skew/i.test(msg)){
+    if(!_clockSkewWarned){
+      _clockSkewWarned = true;
+      showToast("Your device clock looks off — set Date & Time to automatic, then reload.");
+    }
+    return;
+  }
+  showToast(prefix+': '+msg);
+}
+
 // ---------- service worker (actionable notifications, Snooze button) ----------
 let swReady = null;
 if('serviceWorker' in navigator){
@@ -1873,7 +1907,7 @@ let editingExamId = null;
 async function examLoadAll(){
   if(!currentUser) return;
   const { data, error } = await sb.from('exams').select('*').order('exam_date');
-  if(error){ showToast('Could not load exams: '+error.message); return; }
+  if(error){ showLoadError('Could not load exams', error); return; }
   exams = data||[];
   if(!document.getElementById('examsView').classList.contains('hidden')) examRender();
 }
@@ -2343,7 +2377,7 @@ function todoRowToTask(r){
 async function todoLoadTasks(){
   if(!currentUser){ todoTasks=[]; todoRender(); return; }
   const { data, error } = await sb.from('todos').select('*').order('created_at',{ascending:false});
-  if(error){ showToast('Could not load todos: '+error.message); return; }
+  if(error){ showLoadError('Could not load todos', error); return; }
   todoTasks = (data||[]).map(todoRowToTask);
   todoRender();
 }
@@ -2984,7 +3018,7 @@ let editingDeadlineId = null;
 async function deadlineLoadAll(){
   if(!currentUser) return;
   const { data, error } = await sb.from('deadlines').select('*').order('due_date');
-  if(error){ showToast('Could not load deadlines: '+error.message); return; }
+  if(error){ showLoadError('Could not load deadlines', error); return; }
   deadlines = data||[];
   if(!document.getElementById('deadlinesView').classList.contains('hidden')) deadlineRender();
 }
