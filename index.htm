@@ -518,10 +518,43 @@
   .pp-suggestion{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:17px;color:var(--muted);margin:14px 0 0;}
   @media(max-width:760px){.pp-overlay{padding:12px}.pp-modal{padding:20px;max-height:94vh}.pp-metrics{grid-template-columns:repeat(2,1fr)}.pp-layout{grid-template-columns:1fr}.pp-layout .pp-panel{margin-bottom:18px}.pp-add-form{grid-template-columns:1fr 1fr}.pp-add-form button{grid-column:1/-1}.pp-review-grid{grid-template-columns:1fr}.pp-heatmap{grid-auto-columns:12px;grid-template-rows:repeat(7,12px);gap:3px}.pp-cell{width:12px;height:12px}}
 
-  /* smooth cross-fade when switching top-level views (schedule/todos/deadlines/exams) */
-  #scheduleView, #todoView, #deadlinesView, #examsView{ animation: viewFadeIn .35s var(--ease) both; }
+  /* smooth cross-fade when switching top-level views (schedule/todos/deadlines/exams/capsules/notes) */
+  #scheduleView, #todoView, #deadlinesView, #examsView, #capsulesView, #notesView{ animation: viewFadeIn .35s var(--ease) both; }
   @keyframes viewFadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
-  @media (prefers-reduced-motion: reduce){ #scheduleView,#todoView,#deadlinesView,#examsView{ animation:none; } }
+  @media (prefers-reduced-motion: reduce){ #scheduleView,#todoView,#deadlinesView,#examsView,#capsulesView,#notesView{ animation:none; } }
+
+  /* ===================== TIME CAPSULES ===================== */
+  .capsule{border:1px solid var(--line); border-radius:16px; padding:20px 22px; margin-bottom:12px; position:relative; transition:transform .3s var(--ease), border-color .3s var(--ease);}
+  .capsule.locked{border-style:dashed;}
+  .capsule.locked:hover{transform:translateY(-2px);}
+  .capsule.ready{border-color:var(--brass); cursor:pointer;}
+  .capsule.ready:hover{transform:translateY(-2px); box-shadow:0 10px 26px rgba(184,137,79,.18);}
+  .capsule.opened{opacity:.6;}
+  .capsule-top{display:flex; align-items:center; gap:10px; margin-bottom:6px;}
+  .capsule-icon{font-size:15px; flex-shrink:0;}
+  .capsule-title{font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:600; font-size:17px;}
+  .capsule-meta{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:2px;}
+  .capsule-countdown{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--brass); letter-spacing:.04em;}
+  .capsule-del{position:absolute; top:14px; right:14px; background:none; border:none; color:var(--muted); cursor:pointer; font-size:13px; opacity:.5; transition:opacity .2s var(--ease);}
+  .capsule-del:hover{opacity:1; color:var(--rust);}
+  .capsule-checklist{margin-top:10px; padding-top:10px; border-top:1px solid var(--line);}
+  .capsule-check-item{display:flex; align-items:center; gap:8px; font-family:'Jost'; font-size:13.5px; padding:4px 0;}
+  .capsule-check-item input[type="checkbox"]{width:16px; height:16px; accent-color:var(--teal); cursor:pointer;}
+  .capsule-reveal{text-align:center; padding:10px 4px;}
+  .capsule-reveal-seal{font-size:40px; margin-bottom:14px; display:inline-block; animation:capsuleSealOpen .7s var(--ease-spring) both;}
+  @keyframes capsuleSealOpen{ 0%{transform:scale(.4) rotate(-8deg); opacity:0;} 60%{transform:scale(1.08) rotate(3deg); opacity:1;} 100%{transform:scale(1) rotate(0);} }
+  .capsule-reveal-msg{font-family:'Cormorant Garamond',serif; font-size:19px; line-height:1.5; white-space:pre-wrap; margin:14px 0; text-align:left;}
+  @media (prefers-reduced-motion: reduce){ .capsule-reveal-seal{animation:none;} }
+
+  /* ===================== NOTES ===================== */
+  .note-card{border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:10px; cursor:pointer; transition:transform .3s var(--ease), border-color .3s var(--ease);}
+  .note-card:hover{transform:translateY(-2px); border-color:var(--brass);}
+  .note-card.pinned{border-left:2.5px solid var(--brass);}
+  .note-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+  .note-title{font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:600; font-size:18px; margin:0 0 4px;}
+  .note-snippet{font-family:'Jost'; font-size:13px; color:var(--muted); line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+  .note-meta{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--muted); margin-top:8px;}
+  .note-content-area{width:100%; min-height:260px; padding:14px 16px; border:1px solid var(--line); background:var(--paper-dim); color:var(--fg); font-family:'Jost'; font-size:14.5px; line-height:1.65; border-radius:12px; outline:none; resize:vertical;}
 </style>
 </head>
 <body data-theme="dark">
@@ -594,11 +627,13 @@
     </div>
   </div>
 
-  <div class="view-tabs">
+  <div class="view-tabs" style="flex-wrap:wrap;">
     <button class="pill-btn on" id="tabScheduleBtn">Schedule</button>
     <button class="pill-btn" id="tabTodoBtn">Todos</button>
     <button class="pill-btn" id="tabDeadlinesBtn">Deadlines</button>
     <button class="pill-btn" id="tabExamsBtn">Exams</button>
+    <button class="pill-btn" id="tabCapsulesBtn">Capsules</button>
+    <button class="pill-btn" id="tabNotesBtn">Notes</button>
   </div>
 
   <div id="scheduleView">
@@ -912,6 +947,30 @@
     <div class="agenda" id="examsList"></div>
   </div>
 
+  <div id="capsulesView" class="hidden">
+    <div class="hero" id="capsuleHero">
+      <p class="hero-eyebrow">Next to open</p>
+      <div class="hero-grid" id="capsuleHeroContent"><p class="hero-empty">No capsules yet — seal one for later.</p></div>
+      <div class="hero-line" id="capsuleHeroLine" style="width:0%"></div>
+    </div>
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-top:44px; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+      <p class="section-title" style="margin:0;">Sealed for later</p>
+      <button class="pill-btn" id="addCapsuleBtn">+ Seal a capsule</button>
+    </div>
+    <div class="agenda" id="capsulesList"></div>
+  </div>
+
+  <div id="notesView" class="hidden">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+      <div>
+        <p class="eyebrow" style="margin-bottom:2px;">Ephemeral's</p>
+        <h1 class="display" style="font-size:clamp(28px,4.5vw,40px);">Notes.</h1>
+      </div>
+      <button class="pill-btn" id="addNoteBtn">+ New note</button>
+    </div>
+    <div id="notesGrid" class="agenda"></div>
+  </div>
+
   <p style="text-align:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:56px; letter-spacing:.03em;">Made by Yagnik N. ❤️</p>
 
 </div>
@@ -999,6 +1058,13 @@
   </div>
   <div class="field"><label>Time</label>
     <div class="time-pair"><input id="morningSummaryTimeH" type="number" min="0" max="23" placeholder="08"><span>:</span><input id="morningSummaryTimeM" type="number" min="0" max="59" placeholder="00"></div>
+  </div>
+
+  <p class="section-title" style="font-size:16px; margin-top:28px;">Weekly digest</p>
+  <p class="streak-caption" style="text-align:left; margin-bottom:14px;">An email every Sunday evening — what's due, what's coming up, in one note.</p>
+  <div class="chk-row">
+    <input type="checkbox" id="weeklyDigestEnabled" checked>
+    <label for="weeklyDigestEnabled">Email me a weekly digest</label>
   </div>
 
   <button class="save-btn" id="saveNotifSettings">Save settings</button>
@@ -1149,6 +1215,67 @@
   <p class="streak-caption" style="text-align:left; margin-bottom:20px;">Everything — schedule, todos, habit history, streaks, deadlines. Yours to keep.</p>
   <button class="pill-btn" id="exportJsonBtn" style="width:100%; margin-bottom:10px;">Download JSON ↓</button>
   <button class="pill-btn" id="exportPdfBtn" style="width:100%;">Download PDF ↓</button>
+</div>
+
+<div class="drawer-overlay" id="capsuleOverlay"></div>
+<div class="drawer" id="capsuleDrawer">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+    <p class="section-title" style="margin:0;">Seal a capsule</p>
+    <button class="icon-btn" id="capsuleCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+  </div>
+  <p class="streak-caption" style="text-align:left; margin-bottom:18px;">A note to your future self. It stays locked until the day you choose.</p>
+  <div class="field"><label>Title</label><input id="capTitle" placeholder="e.g. For the morning of the Networks exam"></div>
+  <div class="field">
+    <label>Open it on</label>
+    <select id="capUnlockMode">
+      <option value="date">A specific date</option>
+      <option value="exam">The morning of an exam</option>
+    </select>
+  </div>
+  <div class="field" id="capDateField"><label>Unlock date</label><input id="capDate" type="date"></div>
+  <div class="field hidden" id="capExamField"><label>Exam</label><select id="capExamSelect"></select></div>
+  <div class="field"><label>Note (optional)</label><input id="capNote" placeholder="What do you want to tell yourself?"></div>
+  <div class="field"><label>Checklist (optional, one per line)</label><input id="capChecklist" placeholder="e.g. Sleep by 11 · Pack calculator"></div>
+  <div class="field">
+    <label>Include a focus timer preset (optional)</label>
+    <select id="capFocusPreset">
+      <option value="">None</option>
+      <option value="15">15 min</option>
+      <option value="25" selected>25 min</option>
+      <option value="45">45 min</option>
+      <option value="60">60 min</option>
+    </select>
+  </div>
+  <button class="save-btn" id="saveCapsuleBtn">Seal it</button>
+</div>
+
+<div class="modal-overlay" id="capsuleCeremonyOverlay">
+  <div class="modal capsule-reveal" id="capsuleCeremonyModal" style="max-width:440px; border-radius:22px;">
+    <div class="modal-handle"></div>
+    <div class="capsule-reveal-seal" id="capCeremonySeal">💌</div>
+    <p class="hero-eyebrow" style="text-align:center;">A capsule, opening</p>
+    <h2 class="hero-title" id="capCeremonyTitle" style="font-size:24px; margin:10px 0 14px; text-align:center;">—</h2>
+    <p class="streak-caption" id="capCeremonyDate" style="text-align:center; margin-bottom:18px;"></p>
+    <p id="capCeremonyNote" class="capsule-reveal-msg"></p>
+    <div id="capCeremonyChecklist" class="capsule-checklist" style="text-align:left;"></div>
+    <button class="pill-btn hidden" id="capCeremonyFocusBtn" style="width:100%; margin:14px 0 10px;"></button>
+    <button class="modal-cancel" id="capCeremonyCloseBtn">Close</button>
+  </div>
+</div>
+
+<div class="drawer-overlay" id="noteOverlay"></div>
+<div class="drawer" id="noteDrawer">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+    <p class="section-title" style="margin:0;" id="noteDrawerTitle">New note</p>
+    <div style="display:flex; gap:8px;">
+      <button class="icon-btn" id="notePinBtn" title="Pin" style="border:1px solid var(--line);">📌</button>
+      <button class="icon-btn" id="noteDeleteBtn" title="Delete" style="border:1px solid var(--line);">✕</button>
+      <button class="icon-btn" id="noteCloseBtn" title="Close" style="border:1px solid var(--line);">⎋</button>
+    </div>
+  </div>
+  <div class="field"><input id="noteTitleInp" placeholder="Untitled" style="font-family:'Cormorant Garamond',serif; font-style:italic; font-size:20px; border:none; background:none; padding:4px 0;"></div>
+  <textarea id="noteContentInp" placeholder="Start writing…" style="width:100%; min-height:50vh; border:1px solid var(--line); background:var(--paper-dim); color:var(--fg); font-family:'Jost'; font-size:14.5px; line-height:1.6; padding:14px; border-radius:12px; resize:vertical; outline:none;"></textarea>
+  <p class="streak-caption" id="noteSavedHint" style="text-align:left; margin-top:10px;">&nbsp;</p>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1377,6 +1504,8 @@ sb.auth.onAuthStateChange((event, session)=>{
     grpAutoAcceptFromURL();
     deadlineLoadAll();
     examLoadAll();
+    capsuleLoadAll();
+    notesLoadAll();
   } else {
     currentUser = null;
     document.getElementById('authScreen').classList.remove('hidden');
@@ -1503,19 +1632,39 @@ function renderAgenda(){
 function renderWeekGrid(){
   const el = document.getElementById('weekGrid');
   const today = new Date().getDay();
+  // Monday-start calendar week, same convention as the streak dots, so capsules
+  // land under the correct real date rather than just a recurring day-of-week.
+  const now = new Date();
+  const mondayOffset = (now.getDay()+6)%7;
+  const monday = new Date(now); monday.setDate(now.getDate()-mondayOffset);
   el.innerHTML = '';
   for(let i=1;i<=7;i++){
     const d = i%7;
+    const dateForCol = new Date(monday); dateForCol.setDate(monday.getDate()+(i-1));
+    const dateKey = dateForCol.toISOString().slice(0,10);
     const col = document.createElement('div');
     col.className = 'week-col' + (d===today ? ' is-today' : '');
     const dayEntries = entries.filter(e=>e.day===d).sort((a,b)=>toMinutes(a.start)-toMinutes(b.start));
+    const dayCapsules = (typeof capsules!=='undefined' ? capsules : []).filter(c=>c.unlock_date===dateKey && !c.opened);
     let html = `<div class="week-col-head">${DAY_SHORT[d]}</div>`;
-    if(dayEntries.length===0){ html += `<div class="week-empty">—</div>`; }
-    else { dayEntries.forEach(e=>{ html += `<div class="week-item" data-day="${d}"><div class="week-item-time">${fmtTime(e.start)}</div><div class="week-item-title">${e.title}</div></div>`; }); }
+    if(dayEntries.length===0 && dayCapsules.length===0){ html += `<div class="week-empty">—</div>`; }
+    else {
+      dayEntries.forEach(e=>{ html += `<div class="week-item" data-day="${d}"><div class="week-item-time">${fmtTime(e.start)}</div><div class="week-item-title">${e.title}</div></div>`; });
+      dayCapsules.forEach(c=>{
+        const ready = capsuleIsReady(c);
+        html += `<div class="week-item capsule-week-item" data-capsule-id="${c.id}" style="border-left:2px solid var(--brass);">
+          <div class="week-item-time">${ready?'🎉':'🔒'} ${ready?'ready':'seals'}</div>
+          <div class="week-item-title">${c.title}</div>
+        </div>`;
+      });
+    }
     col.innerHTML = html; el.appendChild(col);
   }
-  el.querySelectorAll('.week-item').forEach(item=>{
+  el.querySelectorAll('.week-item:not(.capsule-week-item)').forEach(item=>{
     item.onclick = ()=>{ selectedDay = Number(item.dataset.day); render(); window.scrollTo({top:0,behavior:'smooth'}); };
+  });
+  el.querySelectorAll('.capsule-week-item').forEach(item=>{
+    item.onclick = ()=>{ switchToTab('capsules'); window.scrollTo({top:0,behavior:'smooth'}); };
   });
 }
 function renderHero(){
@@ -1616,8 +1765,8 @@ function openNewDrawer(){ editingId = null; drawerTitle.textContent = 'New entry
 function openEditDrawer(entry){
   editingId = entry.id; drawerTitle.textContent = 'Edit entry'; saveBtn.textContent = 'Update entry';
   document.getElementById('fTitle').value = entry.title; document.getElementById('fType').value = entry.type;
-  document.getElementById('fDay').value = String(entry.day); document.getElementById('fStart').value = entry.start;
-  document.getElementById('fEnd').value = entry.end; document.getElementById('fLoc').value = entry.location;
+  document.getElementById('fDay').value = String(entry.day); setTimeVal('fStart', entry.start);
+  setTimeVal('fEnd', entry.end); document.getElementById('fLoc').value = entry.location;
   document.getElementById('fNotify').value = entry.notify;
   document.getElementById('fMuted').checked = !!entry.muted;
   document.getElementById('fBypassQuiet').checked = !!entry.bypassQuiet;
@@ -1701,11 +1850,12 @@ document.getElementById('saveNotifSettings').onclick = async ()=>{
   const quiet_end = getTimeVal('quietEnd') || null;
   const morning_summary = document.getElementById('morningSummaryEnabled').checked;
   const morning_summary_time = getTimeVal('morningSummaryTime') || '08:00';
+  const weekly_digest = document.getElementById('weeklyDigestEnabled').checked;
   let accent_color = document.getElementById('customAccentHex').value.trim() || '#B8894F';
   if(!/^#[0-9a-fA-F]{6}$/.test(accent_color)) accent_color = '#B8894F';
-  const { error } = await sb.from('notification_settings').update({ quiet_start, quiet_end, morning_summary, morning_summary_time, accent_color }).eq('user_id',currentUser.id);
+  const { error } = await sb.from('notification_settings').update({ quiet_start, quiet_end, morning_summary, morning_summary_time, weekly_digest, accent_color }).eq('user_id',currentUser.id);
   if(error){ showToast('Could not save: '+error.message); return; }
-  notifSettings = {...notifSettings, quiet_start, quiet_end, morning_summary, morning_summary_time, accent_color};
+  notifSettings = {...notifSettings, quiet_start, quiet_end, morning_summary, morning_summary_time, weekly_digest, accent_color};
   applyAccentColor(accent_color);
   notifSettingsClose();
   showToast('Settings saved ✓');
@@ -1788,7 +1938,7 @@ function notifArmAutoPrompt(){
   document.addEventListener('click', handler, { once:true });
 }
 let notifSnoozeUntil = {}; // entryId -> timestamp ms
-let notifSettings = { quiet_start:null, quiet_end:null, morning_summary:true, morning_summary_time:'08:00', last_summary_date:null, accent_color:'#B8894F' };
+let notifSettings = { quiet_start:null, quiet_end:null, morning_summary:true, morning_summary_time:'08:00', last_summary_date:null, accent_color:'#B8894F', weekly_digest:true };
 
 function notifInQuietHours(){
   if(!notifSettings.quiet_start || !notifSettings.quiet_end) return false;
@@ -1837,6 +1987,7 @@ async function notifLoadSettings(){
   setTimeVal('quietEnd', notifSettings.quiet_end||'');
   document.getElementById('morningSummaryEnabled').checked = notifSettings.morning_summary;
   setTimeVal('morningSummaryTime', notifSettings.morning_summary_time||'08:00');
+  document.getElementById('weeklyDigestEnabled').checked = notifSettings.weekly_digest !== false;
   const accent = notifSettings.accent_color || '#B8894F';
   applyAccentColor(accent);
   renderThemeSwatches(accent);
@@ -1887,6 +2038,7 @@ function checkNotifications(){
   checkMorningSummary();
   checkDeadlineReminders();
   checkExamReminders();
+  checkCapsuleReadiness();
 }
 let notifiedExams = {};
 function checkExamReminders(){
@@ -1939,6 +2091,7 @@ async function examLoadAll(){
   if(error){ showLoadError('Could not load exams', error); return; }
   exams = data||[];
   if(!document.getElementById('examsView').classList.contains('hidden')) examRender();
+  updateAppBadge();
 }
 function examDaysUntil(dateStr){ return deadlineDaysUntil(dateStr); }
 function fmtHM(t){ if(!t) return ''; const [h,m]=t.split(':'); return h+':'+m; }
@@ -2582,43 +2735,26 @@ document.addEventListener('keydown',e=>{
 });
 
 // ---------- schedule / todos tab switch ----------
+const TAB_VIEWS = ['schedule','todo','deadlines','exams','capsules','notes'];
 function switchToTab(tab){
-  document.getElementById('scheduleView').classList.toggle('hidden', tab!=='schedule');
-  document.getElementById('todoView').classList.toggle('hidden', tab!=='todo');
-  document.getElementById('deadlinesView').classList.toggle('hidden', tab!=='deadlines');
-  document.getElementById('examsView').classList.toggle('hidden', tab!=='exams');
-  document.getElementById('tabScheduleBtn').classList.toggle('on', tab==='schedule');
-  document.getElementById('tabTodoBtn').classList.toggle('on', tab==='todo');
-  document.getElementById('tabDeadlinesBtn').classList.toggle('on', tab==='deadlines');
-  document.getElementById('tabExamsBtn').classList.toggle('on', tab==='exams');
+  TAB_VIEWS.forEach(t=>{
+    const viewId = t==='schedule' ? 'scheduleView' : t==='todo' ? 'todoView' : t+'View';
+    const btnId = t==='todo' ? 'tabTodoBtn' : 'tab'+t[0].toUpperCase()+t.slice(1)+'Btn';
+    document.getElementById(viewId).classList.toggle('hidden', tab!==t);
+    document.getElementById(btnId).classList.toggle('on', tab===t);
+  });
   document.getElementById('fabBtn').classList.toggle('hidden', tab!=='schedule');
   if(tab==='deadlines') deadlineRender();
   if(tab==='exams') examRender();
+  if(tab==='capsules') capsuleRender();
+  if(tab==='notes') notesRender();
 }
-document.getElementById('tabScheduleBtn').onclick = ()=>{
-  document.getElementById('scheduleView').classList.remove('hidden');
-  document.getElementById('todoView').classList.add('hidden');
-  document.getElementById('tabScheduleBtn').classList.add('on');
-  document.getElementById('tabTodoBtn').classList.remove('on');
-  document.getElementById('fabBtn').classList.remove('hidden');
-  document.getElementById('deadlinesView').classList.add('hidden');
-  document.getElementById('tabDeadlinesBtn').classList.remove('on');
-  document.getElementById('examsView').classList.add('hidden');
-  document.getElementById('tabExamsBtn').classList.remove('on');
-};
-document.getElementById('tabTodoBtn').onclick = ()=>{
-  document.getElementById('scheduleView').classList.add('hidden');
-  document.getElementById('todoView').classList.remove('hidden');
-  document.getElementById('tabTodoBtn').classList.add('on');
-  document.getElementById('tabScheduleBtn').classList.remove('on');
-  document.getElementById('fabBtn').classList.add('hidden');
-  document.getElementById('deadlinesView').classList.add('hidden');
-  document.getElementById('tabDeadlinesBtn').classList.remove('on');
-  document.getElementById('examsView').classList.add('hidden');
-  document.getElementById('tabExamsBtn').classList.remove('on');
-};
+document.getElementById('tabScheduleBtn').onclick = ()=>switchToTab('schedule');
+document.getElementById('tabTodoBtn').onclick = ()=>switchToTab('todo');
 document.getElementById('tabDeadlinesBtn').onclick = ()=>switchToTab('deadlines');
 document.getElementById('tabExamsBtn').onclick = ()=>switchToTab('exams');
+document.getElementById('tabCapsulesBtn').onclick = ()=>switchToTab('capsules');
+document.getElementById('tabNotesBtn').onclick = ()=>switchToTab('notes');
 
 // ================= SHARE LINKS (additive, read-only public views) =================
 function shareRandCode(len=8){ const chars='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<len;i++) s+=chars[Math.floor(Math.random()*chars.length)]; return s; }
@@ -3024,6 +3160,318 @@ async function deadlineDelete(id){
   deadlineRender(); showToast('Deadline removed');
 }
 
+// ================= APP ICON BADGE (exam countdown) =================
+async function updateAppBadge(){
+  if(!('setAppBadge' in navigator)) return;
+  const upcoming = (exams||[]).filter(e=>e.exam_date>=todayString()).sort((a,b)=>a.exam_date.localeCompare(b.exam_date));
+  try{
+    if(!upcoming.length){ await navigator.clearAppBadge(); return; }
+    const days = examDaysUntil(upcoming[0].exam_date);
+    await navigator.setAppBadge(Math.max(0, days));
+  }catch(e){ /* Badging API unsupported on this platform (e.g. iOS Safari) — safe to ignore */ }
+}
+
+// ================= TIME CAPSULES (additive) =================
+let capsules = [];
+
+async function capsuleLoadAll(){
+  if(!currentUser) return;
+  const { data, error } = await sb.from('time_capsules').select('*').order('unlock_date');
+  if(error){ showLoadError('Could not load capsules', error); return; }
+  capsules = data||[];
+  if(!document.getElementById('capsulesView').classList.contains('hidden')) capsuleRender();
+  renderWeekGrid();
+}
+function capsuleIsReady(c){ return !c.opened && c.unlock_date<=todayString(); }
+
+function capsuleRender(){
+  const locked = capsules.filter(c=>!c.opened && c.unlock_date>todayString()).sort((a,b)=>a.unlock_date.localeCompare(b.unlock_date));
+  const ready = capsules.filter(c=>capsuleIsReady(c));
+  const opened = capsules.filter(c=>c.opened).sort((a,b)=>b.unlock_date.localeCompare(a.unlock_date));
+
+  const heroBox = document.getElementById('capsuleHeroContent');
+  const heroLine = document.getElementById('capsuleHeroLine');
+  if(ready.length){
+    heroBox.innerHTML = `<div><span class="hero-number">🎉</span></div><div class="hero-detail"><p class="hero-title">${ready.length} capsule${ready.length===1?'':'s'} ready to open</p><p class="hero-meta">See "Ready to open" below</p></div>`;
+    heroLine.style.width='100%';
+  } else if(locked.length){
+    const next = locked[0];
+    const days = deadlineDaysUntil(next.unlock_date);
+    heroBox.innerHTML = `<div><span class="hero-number">${days}</span><span class="hero-unit">day${days===1?'':'s'}</span></div><div class="hero-detail"><p class="hero-title">${next.title}</p><p class="hero-meta">Opens ${fmtYMDDate(next.unlock_date)}</p></div>`;
+    heroLine.style.width = Math.max(4, 100-Math.min(100,days*3))+'%';
+  } else {
+    heroBox.innerHTML = '<p class="hero-empty">No capsules yet — seal one for later.</p>';
+    heroLine.style.width='0%';
+  }
+
+  const list = document.getElementById('capsulesList');
+  let html = '';
+  if(ready.length){
+    html += `<p class="streak-caption" style="text-align:left; text-transform:uppercase; letter-spacing:.08em; margin:4px 0 8px; color:var(--teal);">Ready to open</p>`;
+    ready.forEach(c=>{
+      html += `<div class="entry">
+        <div class="entry-time" style="width:74px;">🎉</div>
+        <div class="entry-dot" style="background:var(--teal)"></div>
+        <div class="entry-body"><div class="entry-title">${c.title}</div><div class="entry-sub">Unlocked ${fmtYMDDate(c.unlock_date)}</div></div>
+        <div class="entry-actions" style="opacity:1;"><button class="openCapsuleBtn" data-id="${c.id}">Open →</button></div>
+      </div>`;
+    });
+  }
+  if(locked.length){
+    html += `<p class="streak-caption" style="text-align:left; text-transform:uppercase; letter-spacing:.08em; margin:18px 0 8px;">Locked</p>`;
+    locked.forEach(c=>{
+      const days = deadlineDaysUntil(c.unlock_date);
+      html += `<div class="entry">
+        <div class="entry-time" style="width:74px;">🔒 ${days}d</div>
+        <div class="entry-dot dot-other"></div>
+        <div class="entry-body"><div class="entry-title">${c.title}</div><div class="entry-sub">Opens ${fmtYMDDate(c.unlock_date)}</div></div>
+        <div class="entry-actions"><button title="Delete" data-id="${c.id}" class="delCapsuleBtn">✕</button></div>
+      </div>`;
+    });
+  }
+  if(opened.length){
+    html += `<p class="streak-caption" style="text-align:left; text-transform:uppercase; letter-spacing:.08em; margin:18px 0 8px;">Opened</p>`;
+    opened.forEach(c=>{
+      html += `<div class="entry">
+        <div class="entry-time" style="width:74px;">✓</div>
+        <div class="entry-dot" style="background:var(--muted)"></div>
+        <div class="entry-body"><div class="entry-title">${c.title}</div><div class="entry-sub">Opened ${fmtYMDDate(c.unlock_date)}</div></div>
+        <div class="entry-actions">
+          <button title="Read again" data-id="${c.id}" class="reopenCapsuleBtn">↻</button>
+          <button title="Delete" data-id="${c.id}" class="delCapsuleBtn">✕</button>
+        </div>
+      </div>`;
+    });
+  }
+  list.innerHTML = html || '<p class="empty-state">Nothing sealed yet.</p>';
+  list.querySelectorAll('.openCapsuleBtn, .reopenCapsuleBtn').forEach(b=>b.onclick=()=>capsuleTryOpen(b.dataset.id));
+  list.querySelectorAll('.delCapsuleBtn').forEach(b=>b.onclick=()=>capsuleDelete(b.dataset.id));
+}
+
+function capsuleFillExamSelect(){
+  const sel = document.getElementById('capExamSelect');
+  const upcoming = (exams||[]).filter(e=>e.exam_date>=todayString()).sort((a,b)=>a.exam_date.localeCompare(b.exam_date));
+  sel.innerHTML = upcoming.length
+    ? upcoming.map(e=>`<option value="${e.id}">${e.course_code?e.course_code+' — ':''}${e.course_name} (${fmtYMDDate(e.exam_date)})</option>`).join('')
+    : '<option value="">No upcoming exams yet — add one in the Exams tab</option>';
+}
+document.getElementById('capUnlockMode').addEventListener('change', e=>{
+  const isExam = e.target.value==='exam';
+  document.getElementById('capDateField').classList.toggle('hidden', isExam);
+  document.getElementById('capExamField').classList.toggle('hidden', !isExam);
+  if(isExam) capsuleFillExamSelect();
+});
+function capsuleOpenNew(){
+  document.getElementById('capTitle').value='';
+  document.getElementById('capUnlockMode').value='date';
+  document.getElementById('capDateField').classList.remove('hidden');
+  document.getElementById('capExamField').classList.add('hidden');
+  document.getElementById('capDate').value=todayString();
+  document.getElementById('capNote').value='';
+  document.getElementById('capChecklist').value='';
+  document.getElementById('capFocusPreset').value='25';
+  document.getElementById('capsuleOverlay').classList.add('open');
+  document.getElementById('capsuleDrawer').classList.add('open');
+}
+function capsuleClose(){
+  document.getElementById('capsuleOverlay').classList.remove('open');
+  document.getElementById('capsuleDrawer').classList.remove('open');
+}
+document.getElementById('addCapsuleBtn').onclick = capsuleOpenNew;
+document.getElementById('capsuleCloseBtn').onclick = capsuleClose;
+document.getElementById('capsuleOverlay').onclick = capsuleClose;
+document.getElementById('saveCapsuleBtn').onclick = async ()=>{
+  const title = document.getElementById('capTitle').value.trim();
+  if(!title){ showToast('Give it a title first.'); return; }
+  const mode = document.getElementById('capUnlockMode').value;
+  let unlock_date, linked_exam_id=null;
+  if(mode==='exam'){
+    linked_exam_id = document.getElementById('capExamSelect').value || null;
+    const ex = exams.find(e=>e.id===linked_exam_id);
+    if(!ex){ showToast("Pick an exam first — add one in the Exams tab if you haven't yet."); return; }
+    unlock_date = ex.exam_date;
+  } else {
+    unlock_date = document.getElementById('capDate').value;
+    if(!unlock_date){ showToast('Pick an unlock date.'); return; }
+  }
+  const checklist = document.getElementById('capChecklist').value.split('\n').map(s=>s.trim()).filter(Boolean).map(text=>({text, done:false}));
+  const focus_minutes = document.getElementById('capFocusPreset').value ? Number(document.getElementById('capFocusPreset').value) : null;
+  const fields = {
+    title, note: document.getElementById('capNote').value.trim() || null,
+    checklist, focus_minutes, unlock_date, linked_exam_id
+  };
+  const { error } = await sb.from('time_capsules').insert({ ...fields, user_id:currentUser.id });
+  if(error){ showToast('Could not save: '+error.message); return; }
+  capsuleClose(); showToast('Sealed ✓ — opens '+fmtYMDDate(unlock_date));
+  capsuleLoadAll();
+};
+async function capsuleDelete(id){
+  if(!confirm('Delete this capsule? This cannot be undone.')) return;
+  const { error } = await sb.from('time_capsules').delete().eq('id',id);
+  if(error){ showToast('Could not delete: '+error.message); return; }
+  showToast('Capsule deleted'); capsuleLoadAll();
+}
+async function capsuleTryOpen(id){
+  const c = capsules.find(x=>x.id===id); if(!c) return;
+  if(!c.opened && c.unlock_date>todayString()){ showToast('Still locked — opens '+fmtYMDDate(c.unlock_date)); return; }
+  const sealEl = document.getElementById('capCeremonySeal');
+  sealEl.style.animation = 'none'; void sealEl.offsetHeight; sealEl.style.animation = '';
+  document.getElementById('capCeremonyTitle').textContent = c.title;
+  document.getElementById('capCeremonyDate').textContent = 'Unlocked '+fmtYMDDate(c.unlock_date);
+  const noteEl = document.getElementById('capCeremonyNote');
+  noteEl.textContent = c.note || '';
+  noteEl.classList.toggle('hidden', !c.note);
+  const checklistEl = document.getElementById('capCeremonyChecklist');
+  checklistEl.innerHTML = (c.checklist||[]).map(item=>`<div class="chk-row" style="cursor:default;"><span style="width:8px;height:8px;border-radius:50%;background:var(--teal);display:inline-block;flex-shrink:0;"></span><label style="margin:0;">${item.text}</label></div>`).join('');
+  const focusBtn = document.getElementById('capCeremonyFocusBtn');
+  if(c.focus_minutes){
+    focusBtn.classList.remove('hidden');
+    focusBtn.textContent = 'Start a '+c.focus_minutes+' min focus session';
+    focusBtn.onclick = ()=>{
+      pomoSeconds = c.focus_minutes*60; pomoIsBreak=false; updatePomo();
+      document.getElementById('capsuleCeremonyOverlay').classList.remove('open');
+      switchToTab('schedule');
+      showToast('Focus timer set to '+c.focus_minutes+' min — hit Start when ready.');
+    };
+  } else { focusBtn.classList.add('hidden'); }
+  document.getElementById('capsuleCeremonyOverlay').classList.add('open');
+  if(!c.opened){
+    const { error } = await sb.from('time_capsules').update({ opened:true }).eq('id',id);
+    if(!error){ c.opened = true; capsuleRender(); renderWeekGrid(); }
+  }
+}
+document.getElementById('capCeremonyCloseBtn').onclick = ()=>document.getElementById('capsuleCeremonyOverlay').classList.remove('open');
+document.getElementById('capsuleCeremonyOverlay').onclick = e=>{ if(e.target.id==='capsuleCeremonyOverlay') document.getElementById('capsuleCeremonyOverlay').classList.remove('open'); };
+
+let notifiedCapsules = {};
+function checkCapsuleReadiness(){
+  if(!capsules.length) return;
+  const todayKey = todayString();
+  capsules.forEach(c=>{
+    if(c.opened) return;
+    if(c.unlock_date===todayKey && !notifiedCapsules[c.id+'_'+todayKey]){
+      notifiedCapsules[c.id+'_'+todayKey] = true;
+      beep();
+      notifShow({ title:'A capsule is ready', body:c.title, tag:'capsule-'+c.id });
+      showToast('A capsule just unlocked: '+c.title);
+    }
+  });
+}
+
+// ================= NOTES (additive) =================
+let notesList = [];
+let editingNoteId = null;
+let noteSaveTimer = null;
+
+async function notesLoadAll(){
+  if(!currentUser) return;
+  const { data, error } = await sb.from('notes').select('*').order('pinned',{ascending:false}).order('updated_at',{ascending:false});
+  if(error){ showLoadError('Could not load notes', error); return; }
+  notesList = data||[];
+  if(!document.getElementById('notesView').classList.contains('hidden')) notesRender();
+}
+function notesPreview(content){
+  const t = (content||'').trim().replace(/\s+/g,' ');
+  return t.length>90 ? t.slice(0,90)+'…' : (t || 'Empty note');
+}
+function notesRender(){
+  const grid = document.getElementById('notesGrid');
+  grid.innerHTML='';
+  if(!notesList.length){ grid.innerHTML='<p class="empty-state">No notes yet — start writing.</p>'; return; }
+  notesList.forEach(n=>{
+    const row=document.createElement('div'); row.className='entry';
+    row.style.cursor='pointer';
+    row.innerHTML = `
+      <div class="entry-dot" style="background:${n.pinned?'var(--brass)':'var(--muted)'}"></div>
+      <div class="entry-body">
+        <div class="entry-title">${n.pinned?'📌 ':''}${n.title || 'Untitled'}</div>
+        <div class="entry-sub">${notesPreview(n.content)} · ${todoFmtDate(new Date(n.updated_at).getTime())}</div>
+      </div>`;
+    row.onclick = ()=>noteOpenEdit(n);
+    grid.appendChild(row);
+  });
+}
+function noteOpenNew(){
+  editingNoteId = null;
+  document.getElementById('noteDrawerTitle').textContent = 'New note';
+  document.getElementById('noteTitleInp').value='';
+  document.getElementById('noteContentInp').value='';
+  document.getElementById('notePinBtn').style.opacity='.5';
+  document.getElementById('noteSavedHint').textContent='\u00a0';
+  document.getElementById('noteOverlay').classList.add('open');
+  document.getElementById('noteDrawer').classList.add('open');
+  setTimeout(()=>document.getElementById('noteTitleInp').focus(),150);
+}
+function noteOpenEdit(n){
+  editingNoteId = n.id;
+  document.getElementById('noteDrawerTitle').textContent = 'Edit note';
+  document.getElementById('noteTitleInp').value = n.title||'';
+  document.getElementById('noteContentInp').value = n.content||'';
+  document.getElementById('notePinBtn').style.opacity = n.pinned ? '1' : '.5';
+  document.getElementById('noteSavedHint').textContent='\u00a0';
+  document.getElementById('noteOverlay').classList.add('open');
+  document.getElementById('noteDrawer').classList.add('open');
+}
+async function noteSaveNow(){
+  if(!currentUser) return;
+  const title = document.getElementById('noteTitleInp').value.trim() || 'Untitled';
+  const content = document.getElementById('noteContentInp').value;
+  if(editingNoteId){
+    const { error } = await sb.from('notes').update({ title, content, updated_at:new Date().toISOString() }).eq('id',editingNoteId);
+    if(error){ showToast('Could not save: '+error.message); return; }
+    const n = notesList.find(x=>x.id===editingNoteId); if(n){ n.title=title; n.content=content; n.updated_at=new Date().toISOString(); }
+  } else {
+    const { data, error } = await sb.from('notes').insert({ user_id:currentUser.id, title, content }).select().single();
+    if(error){ showToast('Could not save: '+error.message); return; }
+    editingNoteId = data.id;
+    notesList.unshift(data);
+  }
+  const hint = document.getElementById('noteSavedHint'); if(hint) hint.textContent = 'Saved ✓';
+  notesRender();
+}
+function noteScheduleSave(){
+  document.getElementById('noteSavedHint').textContent = 'Saving…';
+  clearTimeout(noteSaveTimer);
+  noteSaveTimer = setTimeout(noteSaveNow, 900);
+}
+function noteClose(){
+  clearTimeout(noteSaveTimer);
+  const title = document.getElementById('noteTitleInp').value.trim();
+  const content = document.getElementById('noteContentInp').value;
+  if(currentUser && (title || content)) noteSaveNow();
+  document.getElementById('noteOverlay').classList.remove('open');
+  document.getElementById('noteDrawer').classList.remove('open');
+  editingNoteId = null;
+}
+document.getElementById('addNoteBtn').onclick = noteOpenNew;
+document.getElementById('noteCloseBtn').onclick = noteClose;
+document.getElementById('noteOverlay').onclick = noteClose;
+document.getElementById('noteTitleInp').addEventListener('input', noteScheduleSave);
+document.getElementById('noteContentInp').addEventListener('input', noteScheduleSave);
+document.getElementById('notePinBtn').onclick = async ()=>{
+  if(!editingNoteId){ await noteSaveNow(); if(!editingNoteId) return; }
+  const n = notesList.find(x=>x.id===editingNoteId); if(!n) return;
+  const newPinned = !n.pinned;
+  const { error } = await sb.from('notes').update({ pinned:newPinned }).eq('id',editingNoteId);
+  if(error){ showToast('Could not update: '+error.message); return; }
+  n.pinned = newPinned;
+  document.getElementById('notePinBtn').style.opacity = newPinned ? '1' : '.5';
+  showToast(newPinned?'Pinned 📌':'Unpinned');
+  notesRender();
+};
+document.getElementById('noteDeleteBtn').onclick = async ()=>{
+  if(!editingNoteId){ noteClose(); return; }
+  if(!confirm('Delete this note? This cannot be undone.')) return;
+  const { error } = await sb.from('notes').delete().eq('id',editingNoteId);
+  if(error){ showToast('Could not delete: '+error.message); return; }
+  notesList = notesList.filter(x=>x.id!==editingNoteId);
+  showToast('Note deleted');
+  editingNoteId = null;
+  document.getElementById('noteOverlay').classList.remove('open');
+  document.getElementById('noteDrawer').classList.remove('open');
+  notesRender();
+};
+
 // ================= EXPORT EVERYTHING (additive) =================
 async function exportGatherAll(){
   const [{data:entryRows},{data:todoRows},{data:habitRows},{data:habitLogRows},{data:deadlineRows},{data:groupTodoRows}] = await Promise.all([
@@ -3182,7 +3630,7 @@ document.getElementById('nlQuickAdd').addEventListener('keydown', e=>{ if(e.key=
   setInterval(()=>{ if(currentUser){ renderHero(); checkNotifications(); } }, 20000);
   setInterval(()=>{ if(currentUser) renderHero(); }, 1000*60);
   // light polling so a change made on another device shows up here within a minute
-  setInterval(()=>{ if(currentUser){ loadData(); todoLoadTasks(); deadlineLoadAll(); examLoadAll(); } }, 60000);
+  setInterval(()=>{ if(currentUser){ loadData(); todoLoadTasks(); deadlineLoadAll(); examLoadAll(); capsuleLoadAll(); notesLoadAll(); } }, 60000);
 })();
 </script>
 </body>
