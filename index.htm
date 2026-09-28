@@ -237,7 +237,8 @@
   .intro-tagline{font-family:'Cormorant Garamond',serif; font-style:italic; font-size:15px; color:var(--muted); margin-top:10px; opacity:0; animation:introFade .8s ease forwards .55s;}
   .intro-line{position:relative; width:120px; height:1px; background:var(--line); overflow:hidden; margin-top:26px; opacity:0; animation:introFade .6s ease forwards .8s;}
   .intro-line::after{ content:''; position:absolute; top:0; left:-40%; width:40%; height:100%; background:var(--brass); animation:maintShimmer 1.8s ease-in-out infinite .9s; }
-  @keyframes introFade{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes introFade{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+  @media(max-width:599px){ #todoView{ padding-bottom:84px; } }
   @media (prefers-reduced-motion: reduce){
     .intro-eyebrow,.intro-word,.intro-tagline,.intro-line{animation:none; opacity:1; transform:none;}
     .intro-line::after{animation:none; opacity:0;}
@@ -519,8 +520,8 @@
   @media(max-width:760px){.pp-overlay{padding:12px}.pp-modal{padding:20px;max-height:94vh}.pp-metrics{grid-template-columns:repeat(2,1fr)}.pp-layout{grid-template-columns:1fr}.pp-layout .pp-panel{margin-bottom:18px}.pp-add-form{grid-template-columns:1fr 1fr}.pp-add-form button{grid-column:1/-1}.pp-review-grid{grid-template-columns:1fr}.pp-heatmap{grid-auto-columns:12px;grid-template-rows:repeat(7,12px);gap:3px}.pp-cell{width:12px;height:12px}}
 
   /* smooth cross-fade when switching top-level views (schedule/todos/deadlines/exams/capsules/notes) */
-  #scheduleView, #todoView, #deadlinesView, #examsView, #capsulesView, #notesView{ animation: viewFadeIn .35s var(--ease) both; }
-  @keyframes viewFadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  #scheduleView, #todoView, #deadlinesView, #examsView, #capsulesView, #notesView{ animation: viewFadeIn .35s var(--ease) backwards; }
+  @keyframes viewFadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
   @media (prefers-reduced-motion: reduce){ #scheduleView,#todoView,#deadlinesView,#examsView,#capsulesView,#notesView{ animation:none; } }
 
   /* ===================== TIME CAPSULES ===================== */
