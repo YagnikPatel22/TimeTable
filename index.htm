@@ -1269,8 +1269,8 @@
     <p class="section-title" style="margin:0;" id="noteDrawerTitle">New note</p>
     <div style="display:flex; gap:8px;">
       <button class="icon-btn" id="notePinBtn" title="Pin" style="border:1px solid var(--line);">📌</button>
-      <button class="icon-btn" id="noteDeleteBtn" title="Delete" style="border:1px solid var(--line);">✕</button>
-      <button class="icon-btn" id="noteCloseBtn" title="Close" style="border:1px solid var(--line);">⎋</button>
+      <button class="icon-btn" id="noteDeleteBtn" title="Delete note" style="border:1px solid var(--line);">🗑</button>
+      <button class="icon-btn" id="noteCloseBtn" title="Close (note is saved automatically)" style="border:1px solid var(--line);">✕</button>
     </div>
   </div>
   <div class="field"><input id="noteTitleInp" placeholder="Untitled" style="font-family:'Cormorant Garamond',serif; font-style:italic; font-size:20px; border:none; background:none; padding:4px 0;"></div>
@@ -3444,6 +3444,7 @@ function noteClose(){
   editingNoteId = null;
 }
 document.getElementById('addNoteBtn').onclick = noteOpenNew;
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && document.getElementById('noteDrawer').classList.contains('open')) noteClose(); });
 document.getElementById('noteCloseBtn').onclick = noteClose;
 document.getElementById('noteOverlay').onclick = noteClose;
 document.getElementById('noteTitleInp').addEventListener('input', noteScheduleSave);
