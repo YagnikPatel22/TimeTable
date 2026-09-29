@@ -41,6 +41,39 @@
   h1.display{font-family:'Cormorant Garamond', serif; font-weight:500; font-style:italic; font-size:clamp(34px,5vw,52px); margin:0; line-height:1.05;}
   .topbar{display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap; margin-bottom:34px;}
   .topbar-right{display:flex; gap:10px; align-items:center;}
+  /* on desktop the old row of buttons stays hidden — the "..." menu is the single entry point */
+  .chrome-secondary{display:none !important;}
+
+  .ephemeral-more-wrap{position:relative; display:flex; align-items:center; flex-shrink:0;}
+  .ephemeral-more-wrap .icon-btn{letter-spacing:0; font-size:0; line-height:0;}
+  .ephemeral-more-wrap .icon-btn svg{display:block;}
+  .theme-btn{letter-spacing:0; font-size:0; line-height:0;}
+  .theme-btn svg{display:block;}
+
+  .share-link-card{border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:10px;}
+  .share-link-title{font-family:'Jost'; font-weight:500; font-size:13.5px; margin-bottom:5px;}
+  .share-link-url{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:12px;}
+  .share-link-actions{display:flex; gap:8px;}
+  .share-link-actions button{font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500; padding:7px 13px; border-radius:100px; border:1px solid var(--line); background:none; color:var(--muted); cursor:pointer; transition:all .2s var(--ease);}
+  .share-link-copy:hover{border-color:var(--brass); color:var(--brass);}
+  .share-link-revoke{margin-left:auto;}
+  .share-link-revoke:hover{border-color:var(--rust); color:var(--rust);}
+  .ephemeral-menu-scrim{position:fixed; inset:0; background:rgba(0,0,0,.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); z-index:850; opacity:0; pointer-events:none; transition:opacity .28s var(--ease);}
+  .ephemeral-menu-scrim.open{opacity:1; pointer-events:auto;}
+  .ephemeral-menu{position:absolute; right:0; top:calc(100% + 10px); background:var(--bg); border:1px solid var(--line); border-radius:18px; padding:10px 8px 8px; min-width:240px; z-index:880; box-shadow:0 18px 48px rgba(0,0,0,.28); display:none;}
+  .ephemeral-menu.open{display:block;}
+  .ephemeral-menu-handle{display:none; width:36px; height:4px; background:var(--line); border-radius:100px; margin:4px auto 14px;}
+  .ephemeral-menu-kicker{font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); padding:8px 14px 4px;}
+  .ephemeral-menu-div{height:1px; background:var(--line); margin:8px 10px;}
+  .ephemeral-menu button{display:block; width:100%; text-align:left; background:none; border:none; color:var(--fg); font-family:'Jost',sans-serif; font-size:14px; font-weight:500; padding:11px 14px; border-radius:12px; cursor:pointer; white-space:nowrap; letter-spacing:-0.01em; transition:background-color .18s var(--ease), color .18s var(--ease);}
+  .ephemeral-menu button:hover, .ephemeral-menu button:active{background:var(--paper-dim); color:var(--brass);}
+  .ephemeral-menu button.danger:hover, .ephemeral-menu button.danger:active{color:var(--rust); background:color-mix(in srgb, var(--rust) 10%, transparent);}
+  .ephemeral-menu-email{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--muted); padding:8px 14px 6px; word-break:break-all;}
+  @media(max-width:600px){
+    .ephemeral-menu{position:fixed; left:10px; right:10px; top:auto; bottom:calc(12px + env(safe-area-inset-bottom,0px)); min-width:0; width:auto; border-radius:22px; padding:8px 10px calc(10px + env(safe-area-inset-bottom,0px)); box-shadow:0 -16px 60px rgba(0,0,0,.38); z-index:900;}
+    .ephemeral-menu-handle{display:block;}
+    .ephemeral-menu button{padding:13px 14px; font-size:15px; border-radius:14px;}
+  }
   .icon-btn{background:none; border:1px solid var(--line); color:var(--fg); width:38px; height:38px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px; transition:border-color .25s var(--ease), transform .25s var(--ease), background-color .25s var(--ease);}
   .icon-btn:hover{border-color:var(--brass); transform:translateY(-1px);}
   .icon-btn:active{transform:scale(.94);}
@@ -619,14 +652,35 @@
       <h1 class="display" id="pageTitle">Today</h1>
     </div>
     <div class="topbar-right">
-      <span id="userBadge"></span>
-      <button class="pill-btn" id="alertBtn">Enable alerts</button>
-      <button class="icon-btn" id="exportBtn" title="Export your data">⬇</button>
-      <button class="icon-btn" id="notifSettingsBtn" title="Notification settings">⚙</button>
-      <button class="icon-btn" id="themeBtn" title="Toggle theme">☾</button>
-      <button class="icon-btn" id="logoutBtn" title="Sign out">⎋</button>
+      <span id="userBadge" class="chrome-secondary"></span>
+      <button class="pill-btn chrome-secondary" id="alertBtn">Enable alerts</button>
+      <button class="icon-btn chrome-secondary" id="exportBtn" title="Export your data">⬇</button>
+      <button class="icon-btn chrome-secondary" id="notifSettingsBtn" title="Notification settings">⚙</button>
+      <button class="icon-btn theme-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme"></button>
+      <button class="icon-btn chrome-secondary" id="logoutBtn" title="Sign out">⎋</button>
+      <div class="ephemeral-more-wrap">
+        <button class="icon-btn" id="ephemeralMoreBtn" title="Menu" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true">
+            <circle cx="4" cy="9" r="1.5"/><circle cx="9" cy="9" r="1.5"/><circle cx="14" cy="9" r="1.5"/>
+          </svg>
+        </button>
+        <div class="ephemeral-menu" id="ephemeralMenu">
+          <div class="ephemeral-menu-handle"></div>
+          <div class="ephemeral-menu-kicker">Quick add</div>
+          <button id="menuNote">Leave a note</button>
+          <button id="menuCapsule">Seal a time capsule</button>
+          <div class="ephemeral-menu-div"></div>
+          <div class="ephemeral-menu-kicker">Account</div>
+          <button id="menuAlerts">Enable alerts</button>
+          <button id="menuSettings">Settings</button>
+          <button id="menuExport">Export data</button>
+          <button id="menuSignOut" class="danger">Sign out</button>
+          <div class="ephemeral-menu-email" id="menuEmail"></div>
+        </div>
+      </div>
     </div>
   </div>
+  <div class="ephemeral-menu-scrim" id="ephemeralMenuScrim"></div>
 
   <div class="view-tabs" style="flex-wrap:wrap;">
     <button class="pill-btn on" id="tabScheduleBtn">Schedule</button>
@@ -1743,10 +1797,14 @@ function renderStreak(){
 function render(){ renderDayTabs(); renderAgenda(); renderHero(); renderGaps(); renderStreak(); renderWeekGrid(); }
 
 // ---------- theme ----------
+const THEME_ICON_SUN = '<svg width="17" height="17" viewBox="0 0 17 17" fill="none"><circle cx="8.5" cy="8.5" r="3.3" stroke="currentColor" stroke-width="1.4"/><g stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M8.5 1v1.6"/><path d="M8.5 14.4V16"/><path d="M1 8.5h1.6"/><path d="M14.4 8.5H16"/><path d="M3.4 3.4l1.13 1.13"/><path d="M12.47 12.47l1.13 1.13"/><path d="M13.6 3.4l-1.13 1.13"/><path d="M4.53 12.47L3.4 13.6"/></g></svg>';
+const THEME_ICON_MOON = '<svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M14.7 10.4A6.2 6.2 0 1 1 6.6 2.3a5 5 0 0 0 8.1 8.1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+function themeSetIcon(dark){ document.getElementById('themeBtn').innerHTML = dark ? THEME_ICON_MOON : THEME_ICON_SUN; }
+themeSetIcon(document.body.getAttribute('data-theme')==='dark');
 document.getElementById('themeBtn').onclick = ()=>{
   const b = document.body; const dark = b.getAttribute('data-theme')==='dark';
   b.setAttribute('data-theme', dark?'light':'dark');
-  document.getElementById('themeBtn').textContent = dark ? '☀' : '☾';
+  themeSetIcon(!dark);
 };
 
 // ---------- drawer ----------
@@ -2775,12 +2833,21 @@ async function shareLoadLinks(){
   if(!data || !data.length){ el.innerHTML='<p class="empty-state" style="padding:16px 4px;">No active links yet.</p>'; return; }
   data.forEach(l=>{
     const scopeLabel = l.scope==='week' ? 'Whole week' : DAY_NAMES[Number(l.scope)];
-    const row=document.createElement('div'); row.className='entry';
-    row.innerHTML = `<div class="entry-body"><div class="entry-title">${scopeLabel}</div><div class="entry-sub">${location.origin+location.pathname}?share=${l.token}</div></div>
-      <div class="entry-actions"><button class="revokeShareBtn" data-id="${l.id}">Revoke</button></div>`;
+    const url = location.origin+location.pathname+'?share='+l.token;
+    const row=document.createElement('div'); row.className='share-link-card';
+    row.innerHTML = `
+      <div class="share-link-title">${scopeLabel}</div>
+      <div class="share-link-url" title="${url}">${url}</div>
+      <div class="share-link-actions">
+        <button class="share-link-copy" data-url="${url}">Copy</button>
+        <button class="share-link-revoke" data-id="${l.id}">Revoke</button>
+      </div>`;
     el.appendChild(row);
   });
-  el.querySelectorAll('.revokeShareBtn').forEach(b=>{
+  el.querySelectorAll('.share-link-copy').forEach(b=>{
+    b.onclick=()=> navigator.clipboard.writeText(b.dataset.url).then(()=>showToast('Link copied ✓'));
+  });
+  el.querySelectorAll('.share-link-revoke').forEach(b=>{
     b.onclick=async ()=>{
       const { error } = await sb.from('share_links').update({revoked:true}).eq('id',b.dataset.id);
       if(error){ showToast('Could not revoke: '+error.message); return; }
@@ -3605,6 +3672,45 @@ document.getElementById('nlParseBtn').onclick = ()=>{
   hint.style.color = 'var(--teal)';
 };
 document.getElementById('nlQuickAdd').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('nlParseBtn').click(); } });
+
+// ---------- minimal "..." menu (consolidates alerts/settings/export/sign-out/quick-add) ----------
+(function wireEphemeralMenu(){
+  const btn = document.getElementById('ephemeralMoreBtn');
+  const menu = document.getElementById('ephemeralMenu');
+  const scrim = document.getElementById('ephemeralMenuScrim');
+  if(!btn || !menu) return;
+
+  function openMenu(){
+    menu.classList.add('open');
+    if(scrim) scrim.classList.add('open');
+    const emailEl = document.getElementById('menuEmail');
+    if(emailEl) emailEl.textContent = currentUser?.email || '';
+    const alertsItem = document.getElementById('menuAlerts');
+    if(alertsItem) alertsItem.textContent = document.getElementById('alertBtn').classList.contains('on') ? 'Alerts on' : 'Enable alerts';
+  }
+  function closeMenu(){
+    menu.classList.remove('open');
+    if(scrim) scrim.classList.remove('open');
+  }
+  btn.onclick = (e)=>{ e.stopPropagation(); menu.classList.contains('open') ? closeMenu() : openMenu(); };
+  if(scrim) scrim.onclick = closeMenu;
+  document.addEventListener('click', (e)=>{
+    if(!menu.contains(e.target) && e.target!==btn && !btn.contains(e.target)) closeMenu();
+  });
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMenu(); });
+
+  function bind(id, fn){
+    const el = document.getElementById(id);
+    if(el) el.onclick = ()=>{ closeMenu(); fn(); };
+  }
+  // each item reuses the app's real, already-working logic — nothing new is invented here
+  bind('menuNote', ()=>{ switchToTab('notes'); noteOpenNew(); });
+  bind('menuCapsule', ()=>{ switchToTab('capsules'); capsuleOpenNew(); });
+  bind('menuAlerts', ()=> document.getElementById('alertBtn').click());
+  bind('menuSettings', ()=> document.getElementById('notifSettingsBtn').click());
+  bind('menuExport', ()=> document.getElementById('exportBtn').click());
+  bind('menuSignOut', ()=> document.getElementById('logoutBtn').click());
+})();
 
 // ---------- intro splash ----------
 (function introDismiss(){
