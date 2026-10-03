@@ -640,6 +640,33 @@
     <p class="auth-error" id="authError"></p>
     <button class="save-btn" id="authSubmit">Sign in</button>
     <p class="auth-toggle" id="authToggle">New here? <a id="authToggleLink">Create an account</a></p>
+    <p class="auth-toggle" id="authForgotRow" style="margin-top:8px;"><a id="authForgotLink">Forgot password?</a></p>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD: request the reset email -->
+<div class="auth-screen hidden" id="forgotScreen">
+  <div class="auth-card">
+    <p class="eyebrow">Ephemeral / Schedule</p>
+    <h1>Reset password</h1>
+    <p class="auth-sub">We'll email you a link to set a new one.</p>
+    <div class="field"><label>Email</label><input id="forgotEmail" type="email" placeholder="you@example.com"></div>
+    <p class="auth-error" id="forgotError"></p>
+    <button class="save-btn" id="forgotSubmit">Send reset link</button>
+    <p class="auth-toggle"><a id="forgotBackLink">← Back to sign in</a></p>
+  </div>
+</div>
+
+<!-- RESET PASSWORD: landed here from the emailed link, set a new password -->
+<div class="auth-screen hidden" id="resetScreen">
+  <div class="auth-card">
+    <p class="eyebrow">Ephemeral / Schedule</p>
+    <h1>Choose a new password</h1>
+    <p class="auth-sub">This finishes the reset link from your email.</p>
+    <div class="field"><label>New password</label><input id="resetPassword" type="password" placeholder="At least 6 characters"></div>
+    <div class="field"><label>Confirm new password</label><input id="resetPasswordConfirm" type="password" placeholder="Type it again"></div>
+    <p class="auth-error" id="resetError"></p>
+    <button class="save-btn" id="resetSubmit">Set new password</button>
   </div>
 </div>
 
@@ -673,6 +700,7 @@
           <div class="ephemeral-menu-kicker">Account</div>
           <button id="menuAlerts">Enable alerts</button>
           <button id="menuSettings">Settings</button>
+          <button id="menuChangePassword">Change password</button>
           <button id="menuExport">Export data</button>
           <button id="menuSignOut" class="danger">Sign out</button>
           <div class="ephemeral-menu-email" id="menuEmail"></div>
@@ -1272,6 +1300,19 @@
   <button class="pill-btn" id="exportPdfBtn" style="width:100%;">Download PDF ↓</button>
 </div>
 
+<div class="drawer-overlay" id="changePwOverlay"></div>
+<div class="drawer" id="changePwDrawer">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+    <p class="section-title" style="margin:0;">Change password</p>
+    <button class="icon-btn" id="changePwCloseBtn" title="Close" style="border:1px solid var(--line);">✕</button>
+  </div>
+  <p class="streak-caption" style="text-align:left; margin-bottom:20px;">You're signed in as <span id="changePwEmail" style="color:var(--fg);"></span>. Choose a new password below.</p>
+  <div class="field"><label>New password</label><input id="changePwNew" type="password" placeholder="At least 6 characters"></div>
+  <div class="field"><label>Confirm new password</label><input id="changePwConfirm" type="password" placeholder="Type it again"></div>
+  <p class="auth-error" id="changePwError"></p>
+  <button class="save-btn" id="changePwSubmit">Update password</button>
+</div>
+
 <div class="drawer-overlay" id="capsuleOverlay"></div>
 <div class="drawer" id="capsuleDrawer">
   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
@@ -1541,13 +1582,108 @@ document.getElementById('logoutBtn').onclick = async ()=>{
   await sb.auth.signOut();
 };
 
+// ---------- forgot / reset password ----------
+function authShowScreen(id){
+  ['authScreen','forgotScreen','resetScreen'].forEach(s=>{
+    document.getElementById(s).classList.toggle('hidden', s!==id);
+  });
+}
+// Detect a recovery link ourselves from the URL, rather than relying only on the
+// PASSWORD_RECOVERY event — some Supabase client versions/flows don't fire it in
+// time (or at all), which is why the reset screen could get skipped entirely.
+const _recoveryHash = new URLSearchParams(location.hash.replace(/^#/, ''));
+const _recoveryQuery = new URLSearchParams(location.search);
+let awaitingPasswordReset = _recoveryHash.get('type')==='recovery' || _recoveryQuery.get('type')==='recovery';
+if(awaitingPasswordReset){
+  document.getElementById('appWrap').classList.add('hidden');
+  document.getElementById('fabBtn').classList.add('hidden');
+  authShowScreen('resetScreen');
+}
+document.getElementById('authForgotLink').onclick = ()=>{
+  document.getElementById('forgotEmail').value = document.getElementById('authEmail').value.trim();
+  document.getElementById('forgotError').textContent = '';
+  authShowScreen('forgotScreen');
+};
+document.getElementById('forgotBackLink').onclick = ()=> authShowScreen('authScreen');
+document.getElementById('forgotSubmit').onclick = async ()=>{
+  const email = document.getElementById('forgotEmail').value.trim();
+  const errEl = document.getElementById('forgotError');
+  errEl.style.color = 'var(--rust)'; errEl.textContent = '';
+  if(!email){ errEl.textContent = 'Enter your email first.'; return; }
+  const btn = document.getElementById('forgotSubmit');
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Sending…';
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  btn.disabled = false; btn.textContent = orig;
+  if(error){ errEl.textContent = error.message; return; }
+  errEl.style.color = 'var(--teal)';
+  errEl.textContent = 'Check your email for a reset link — it may take a minute, check spam too.';
+};
+document.getElementById('resetSubmit').onclick = async ()=>{
+  const pw = document.getElementById('resetPassword').value;
+  const pw2 = document.getElementById('resetPasswordConfirm').value;
+  const errEl = document.getElementById('resetError');
+  errEl.style.color = 'var(--rust)'; errEl.textContent = '';
+  if(!pw || pw.length < 6){ errEl.textContent = 'Password must be at least 6 characters.'; return; }
+  if(pw !== pw2){ errEl.textContent = "Passwords don't match."; return; }
+  const btn = document.getElementById('resetSubmit');
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Saving…';
+  const { error } = await sb.auth.updateUser({ password: pw });
+  btn.disabled = false; btn.textContent = orig;
+  if(error){ errEl.textContent = error.message; return; }
+  awaitingPasswordReset = false;
+  history.replaceState(null, '', location.pathname); // drop the recovery token from the URL
+  showToast('Password updated ✓');
+  location.reload();
+};
+
+// ---------- change password (already signed in) ----------
+function changePwOpen(){
+  document.getElementById('changePwEmail').textContent = currentUser?.email || '';
+  document.getElementById('changePwNew').value = '';
+  document.getElementById('changePwConfirm').value = '';
+  document.getElementById('changePwError').textContent = '';
+  document.getElementById('changePwOverlay').classList.add('open');
+  document.getElementById('changePwDrawer').classList.add('open');
+}
+function changePwClose(){
+  document.getElementById('changePwOverlay').classList.remove('open');
+  document.getElementById('changePwDrawer').classList.remove('open');
+}
+document.getElementById('changePwCloseBtn').onclick = changePwClose;
+document.getElementById('changePwOverlay').onclick = changePwClose;
+document.getElementById('changePwSubmit').onclick = async ()=>{
+  const pw = document.getElementById('changePwNew').value;
+  const pw2 = document.getElementById('changePwConfirm').value;
+  const errEl = document.getElementById('changePwError');
+  errEl.style.color = 'var(--rust)'; errEl.textContent = '';
+  if(!pw || pw.length < 6){ errEl.textContent = 'Password must be at least 6 characters.'; return; }
+  if(pw !== pw2){ errEl.textContent = "Passwords don't match."; return; }
+  const btn = document.getElementById('changePwSubmit');
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Saving…';
+  const { error } = await sb.auth.updateUser({ password: pw });
+  btn.disabled = false; btn.textContent = orig;
+  if(error){ errEl.textContent = error.message; return; }
+  changePwClose();
+  showToast('Password updated ✓');
+};
+
 sb.auth.onAuthStateChange((event, session)=>{
   if(maintenanceActive) return;
   const _p = new URLSearchParams(location.search);
   if(_p.get('share') || _p.get('study')) return;
+  if(event === 'PASSWORD_RECOVERY'){
+    awaitingPasswordReset = true;
+    document.getElementById('appWrap').classList.add('hidden');
+    document.getElementById('fabBtn').classList.add('hidden');
+    authShowScreen('resetScreen');
+    return;
+  }
+  if(awaitingPasswordReset) return; // don't jump into the app until they've actually set a new password
   if(session && session.user){
     currentUser = session.user;
     document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('forgotScreen').classList.add('hidden');
+    document.getElementById('resetScreen').classList.add('hidden');
     document.getElementById('appWrap').classList.remove('hidden');
     document.getElementById('fabBtn').classList.remove('hidden');
     document.getElementById('userBadge').textContent = currentUser.email;
@@ -1563,7 +1699,7 @@ sb.auth.onAuthStateChange((event, session)=>{
     notesLoadAll();
   } else {
     currentUser = null;
-    document.getElementById('authScreen').classList.remove('hidden');
+    authShowScreen('authScreen');
     document.getElementById('appWrap').classList.add('hidden');
     document.getElementById('fabBtn').classList.add('hidden');
     todoTasks = [];
@@ -1847,22 +1983,28 @@ QUICK.forEach(name=>{
 });
 
 document.getElementById('saveEntry').onclick = async ()=>{
-  const title = document.getElementById('fTitle').value.trim();
-  if(!title){ showToast('Give it a title first.'); return; }
-  const day = Number(document.getElementById('fDay').value);
-  const fields = {
-    title, type: document.getElementById('fType').value, day,
-    start: document.getElementById('fStart').value, end: document.getElementById('fEnd').value,
-    location: document.getElementById('fLoc').value.trim(), notify: Number(document.getElementById('fNotify').value)||15,
-    muted: document.getElementById('fMuted').checked, bypassQuiet: document.getElementById('fBypassQuiet').checked
-  };
-  let ok;
-  if(editingId){ ok = await updateEntry(editingId, fields); }
-  else{ ok = await createEntry(fields); }
-  if(!ok) return;
-  closeDrawer(); selectedDay = day; editingId = null;
-  await loadData();
-  showToast(editingId ? 'Updated: '+title : 'Saved: '+title);
+  try{
+    const title = document.getElementById('fTitle').value.trim();
+    if(!title){ showToast('Give it a title first.'); return; }
+    if(!currentUser){ showToast('Not signed in — reload the page and sign in again.'); return; }
+    const day = Number(document.getElementById('fDay').value);
+    const fields = {
+      title, type: document.getElementById('fType').value, day,
+      start: getTimeVal('fStart') || '09:00', end: getTimeVal('fEnd') || '10:00',
+      location: document.getElementById('fLoc').value.trim(), notify: Number(document.getElementById('fNotify').value)||15,
+      muted: document.getElementById('fMuted').checked, bypassQuiet: document.getElementById('fBypassQuiet').checked
+    };
+    let ok;
+    if(editingId){ ok = await updateEntry(editingId, fields); }
+    else{ ok = await createEntry(fields); }
+    if(!ok) return;
+    closeDrawer(); selectedDay = day; editingId = null;
+    await loadData();
+    showToast(editingId ? 'Updated: '+title : 'Saved: '+title);
+  }catch(err){
+    showToast('Unexpected error: '+(err?.message || err));
+    console.error('saveEntry failed', err);
+  }
 };
 
 document.getElementById('practiceBtn').onclick = ()=>togglePracticedDate(todayString());
@@ -3666,8 +3808,8 @@ document.getElementById('nlParseBtn').onclick = ()=>{
   if(!parsed){ hint.textContent="Couldn't find a time in that — try including something like \"5pm\" or \"17:00\"."; hint.style.color='var(--rust)'; return; }
   document.getElementById('fTitle').value = parsed.title;
   document.getElementById('fDay').value = String(parsed.day);
-  document.getElementById('fStart').value = parsed.start;
-  document.getElementById('fEnd').value = parsed.end;
+  setTimeVal('fStart', parsed.start);
+  setTimeVal('fEnd', parsed.end);
   hint.textContent = `Parsed: ${parsed.title} · ${DAY_NAMES[parsed.day]} · ${parsed.start}–${parsed.end}. Check the fields below and save.`;
   hint.style.color = 'var(--teal)';
 };
@@ -3708,6 +3850,7 @@ document.getElementById('nlQuickAdd').addEventListener('keydown', e=>{ if(e.key=
   bind('menuCapsule', ()=>{ switchToTab('capsules'); capsuleOpenNew(); });
   bind('menuAlerts', ()=> document.getElementById('alertBtn').click());
   bind('menuSettings', ()=> document.getElementById('notifSettingsBtn').click());
+  bind('menuChangePassword', changePwOpen);
   bind('menuExport', ()=> document.getElementById('exportBtn').click());
   bind('menuSignOut', ()=> document.getElementById('logoutBtn').click());
 })();
